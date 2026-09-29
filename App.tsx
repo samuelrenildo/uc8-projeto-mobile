@@ -1,20 +1,38 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import type { Livro } from './src/types/entidades';
+import { CartaoLivro } from './src/componentes/CartaoLivro';
+
+
+const livro1: Livro = {
+  id: 1,
+  titulo: 'O Senhor dos Anéis',
+  autor: 'J.R.R. Tolkien',
+  sinopse: 'Uma épica aventura de fantasia que segue a jornada de Frodo Bolseiro para destruir o Um Anel.',
+  exemplares: 5,
+}
+
+const livro2: Livro = {
+  id: 2,
+  titulo: '1984',
+  autor: 'George Orwell',
+  exemplares: 1,
+};
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <ScrollView style={estilos.container} contentContainerStyle={estilos.conteudo}>
+      <CartaoLivro livro={livro1} />
+      <CartaoLivro livro={livro2} />
+    </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const estilos = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: 40,
+  },
+  conteudo: {
+    padding: 16,
   },
 });
