@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { CartaoLivro } from './src/componentes/CartaoLivro';
 import { FormularioLivro, type DadosLivro } from './src/componentes/FormularioLivro';
 import { carregarLivros } from './src/servicos/acervos';
@@ -21,14 +21,6 @@ export default function App() {
     setLivros([{ id: proximoId, ...dados }, ...livros]);
   }
 
-  if (carregando) {
-    return (
-      <View style={estilos.centro}>
-        <ActivityIndicator size="large" />
-        <Text>Carregando o acervo...</Text>
-     </View>
-    );
- }
 
   return (
     <View style={estilos.tela}>
@@ -47,5 +39,4 @@ export default function App() {
 const estilos = StyleSheet.create({
   tela: { flex: 1, backgroundColor: '#F6F8FA', paddingTop: 48, paddingHorizontal: 16 },
   cabecalho: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
-  centro: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });
