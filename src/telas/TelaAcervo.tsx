@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CartaoLivro } from '../componentes/CartaoLivro';
 import { FormularioLivro, type DadosLivro } from '../componentes/FormularioLivro';
-import { carregarLivros } from '../servicos/acervos';
+import type { RotasDaPilha } from '../navegacao/tipos';
+import { carregarLivros, guardarLivro } from '../servicos/acervo';
 import type { Livro } from '../types/entidades';
 
-export function TelaAcervo() {
+type TelaAcervoProps = NativeStackScreenProps<RotasDaPilha, 'Acervo'>;
+
+export function TelaAcervo({ navigation }: TelaAcervoProps) {
   const [livros, setLivros] = useState<Livro[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [tentativa, setTentativa] = useState(0);
@@ -27,12 +31,13 @@ export function TelaAcervo() {
 
   function adicionar(dados: DadosLivro) {
     const proximoId = livros.reduce((maior, atual) => Math.max(maior, atual.id), 0) + 1;
-    setLivros([{ id: proximoId, ...dados }, ...livros]);
+    const novo: Livro = { id: proximoId, ...dados };
+    guardarLivro(novo);
+    setLivros([novo, ...livros]);
   }
 
   return (
     <View style={estilos.tela}>
-      <Text style={estilos.cabecalho}>Acervo</Text>
       <Pressable style={estilos.botao} onPress={() => setTentativa(tentativa + 1)}>
         <Text style={estilos.textoBotao}>Recarregar</Text>
       </Pressable>
@@ -47,7 +52,14 @@ export function TelaAcervo() {
           <FlatList
             data={livros}
             keyExtractor={(livro) => String(livro.id)}
-            renderItem={({ item }) => <CartaoLivro livro={item} />}
+            renderItem={({ item }) => (
+              <View>
+                <CartaoLivro livro={item} />
+                <Pressable onPress={() => navigation.navigate('DetalheLivro', { id: item.id })}>
+                  <Text style={estilos.detalhes}>Ver detalhes</Text>
+                </Pressable>
+              </View>
+            )}
             ListEmptyComponent={<Text>Nenhum livro no acervo.</Text>}
           />
         </>
@@ -57,9 +69,9 @@ export function TelaAcervo() {
 }
 
 const estilos = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: '#F6F8FA', paddingTop: 48, paddingHorizontal: 16 },
+  tela: { flex: 1, backgroundColor: '#F6F8FA', padding: 16 },
   centro: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  cabecalho: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
   botao: { backgroundColor: '#004A8D', borderRadius: 6, padding: 12, alignItems: 'center', marginBottom: 16 },
   textoBotao: { color: '#fff', fontWeight: 'bold' },
+  detalhes: { color: '#004A8D', fontWeight: 'bold', marginBottom: 16 },
 });
