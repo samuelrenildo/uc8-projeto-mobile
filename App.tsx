@@ -1,18 +1,18 @@
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { RotasDaPilha } from './src/navegacao/tipos';
-import { TelaAcervo } from './src/telas/TelaAcervo';
-import { TelaDetalheLivro } from './src/telas/TelaDetalheLivro';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { PilhaAcervo } from './src/navegacao/PilhaAcervo';
+import type { RotasDasAbas } from './src/navegacao/tipos';
+import { TelaSobre } from './src/telas/TelaSobre';
 
-const Pilha = createNativeStackNavigator<RotasDaPilha>();
+const Abas = createBottomTabNavigator<RotasDasAbas>();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Pilha.Navigator>
-        <Pilha.Screen name="Acervo" component={TelaAcervo} />
-        <Pilha.Screen name="DetalheLivro" component={TelaDetalheLivro} options={{ title: 'Detalhe do livro' }} />
-      </Pilha.Navigator>
+      <Abas.Navigator>
+        <Abas.Screen name="AbaAcervo" component={PilhaAcervo} options={{ title: 'Acervo', headerShown: false }} />
+        <Abas.Screen name="AbaSobre" component={TelaSobre} options={{ title: 'Sobre' }} />
+      </Abas.Navigator>
     </NavigationContainer>
   );
 }
