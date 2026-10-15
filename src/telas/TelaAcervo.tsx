@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CartaoLivro } from '../componentes/CartaoLivro';
 import { FormularioLivro, type DadosLivro } from '../componentes/FormularioLivro';
 import type { RotasDaPilha } from '../navegacao/tipos';
-import { carregarLivros, guardarLivro } from '../servicos/acervo';
+import { carregarLivros, adicionarLivro } from '../servicos/acervo';
 import type { Livro } from '../types/entidades';
 
 type TelaAcervoProps = NativeStackScreenProps<RotasDaPilha, 'Acervo'>;
@@ -32,7 +32,6 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
   function adicionar(dados: DadosLivro) {
     const proximoId = livros.reduce((maior, atual) => Math.max(maior, atual.id), 0) + 1;
     const novo: Livro = { id: proximoId, ...dados };
-    guardarLivro(novo);
     setLivros([novo, ...livros]);
   }
 
