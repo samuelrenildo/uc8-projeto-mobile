@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CartaoLivro } from '../componentes/CartaoLivro';
 import type { RotasDaPilha } from '../navegacao/tipos';
 import { carregarLivros } from '../servicos/acervo';
+import { cores, espacos, larguraMaxima, raio } from '../tema/tema';
 import type { Livro } from '../types/entidades';
 
 type TelaAcervoProps = NativeStackScreenProps<RotasDaPilha, 'Acervo'>;
@@ -13,11 +14,12 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
   const [livros, setLivros] = useState<Livro[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [tentativa, setTentativa] = useState(0);
+  const { width } = useWindowDimensions();
+  const duasColunas = width >= larguraMaxima;
 
   useFocusEffect(
     useCallback(() => {
       let cancelado = false;
-      setCarregando(true);
       carregarLivros().then((resultado) => {
         if (cancelado) {
           return;
@@ -31,10 +33,15 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
     }, [tentativa]),
   );
 
+  function recarregar() {
+    setCarregando(true);
+    setTentativa(tentativa + 1);
+  }
+
   return (
     <View style={estilos.tela}>
-      <View style={estilos.linhaBotoes}>
-        <Pressable style={estilos.botao} onPress={() => setTentativa(tentativa + 1)}>
+      <View style={estilos.barra}>
+        <Pressable style={estilos.botao} onPress={recarregar}>
           <Text style={estilos.textoBotao}>Recarregar</Text>
         </Pressable>
         <Pressable style={estilos.botao} onPress={() => navigation.navigate('NovoLivro')}>
@@ -48,10 +55,13 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
         </View>
       ) : (
         <FlatList
+          key={duasColunas ? 'duas' : 'uma'}
           data={livros}
+          numColumns={duasColunas ? 2 : 1}
+          columnWrapperStyle={duasColunas ? estilos.linhaDeColunas : undefined}
           keyExtractor={(livro) => String(livro.id)}
           renderItem={({ item }) => (
-            <View>
+            <View style={estilos.celula}>
               <CartaoLivro livro={item} />
               <Pressable onPress={() => navigation.navigate('DetalheLivro', { id: item.id })}>
                 <Text style={estilos.detalhes}>Ver detalhes</Text>
@@ -66,10 +76,12 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
 }
 
 const estilos = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: '#F6F8FA', padding: 16 },
+  tela: { flex: 1, backgroundColor: cores.fundo, padding: espacos.md },
+  barra: { flexDirection: 'row', gap: espacos.sm, marginBottom: espacos.md },
   centro: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  linhaBotoes: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  botao: { flex: 1, backgroundColor: '#004A8D', borderRadius: 6, padding: 12, alignItems: 'center' },
-  textoBotao: { color: '#fff', fontWeight: 'bold' },
-  detalhes: { color: '#004A8D', fontWeight: 'bold', marginBottom: 16 },
+  botao: { flex: 1, backgroundColor: cores.primario, borderRadius: raio, padding: espacos.sm + espacos.xs, alignItems: 'center' },
+  textoBotao: { color: cores.textoClaro, fontWeight: 'bold' },
+  linhaDeColunas: { gap: espacos.sm },
+  celula: { flex: 1 },
+  detalhes: { color: cores.primario, fontWeight: 'bold', marginBottom: espacos.md },
 });
