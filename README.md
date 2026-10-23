@@ -27,3 +27,9 @@ Relatórios administrativos e o cadastro de novos livros ficam fora do aplicativ
 | Sobre | Aba Sobre | Aba Sobre | Nenhum |
 
 Acervo, Busca e Sobre são abas porque são seções do aplicativo, acessíveis de qualquer ponto; Detalhe do livro e Novo livro são rotas de pilha porque se abrem a partir do Acervo e voltam para ele.
+
+
+## Configuração
+O aplicativo lê a URL do projeto e a chave publicável do Supabase de um arquivo `.env.local`, que não vai para o repositório. Copie `.env.example` para `.env.local` e use estes valores:
+EXPO_PUBLIC_SUPABASE_URL=https://lvycizqqkztzcaebxjiu.supabase.co
+EXPO_PUBLIC_SUPABASE_KEY=sb_publishable_evjlofwrewCed_5N0DkfdA_8GOaOOrx
