@@ -1,26 +1,89 @@
-import type { Livro } from '../types/entidades';
-import type { DadosLivro } from '../componentes/FormularioLivro';
+import type { Livro, SituacaoEmprestimo } from '../types/entidades';
 
-let acervo: Livro[] = [
-  { id: 1, titulo: 'O Alquimista', autor: 'Paulo Coelho', sinopse: 'Um pastor busca seu tesouro seguindo os sinais do destino.', exemplares: 3 },
-  { id: 2, titulo: '1984', autor: 'George Orwell', exemplares: 1 },
-];
-
-export function carregarLivros(): Promise<Livro[]> {
-  return new Promise((resolver) => {
-    setTimeout(() => resolver(acervo), 800);
-  });
+export interface DadosNovoLivro {
+  titulo: string;
+  autor: string;
+  exemplares: number;
 }
 
-export function buscarLivro(id: number): Promise<Livro | undefined> {
-  return new Promise((resolver) => {
-    setTimeout(() => resolver(acervo.find((livro) => livro.id === id)), 400);
-  });
+interface LivroRemoto {
+  id: number;
+  titulo: string;
+  autor: string;
+  sinopse: string | null;
+  exemplares: number;
 }
 
-export function adicionarLivro(dados: DadosLivro): Livro {
-  const proximoId = acervo.reduce((maior, atual) => Math.max(maior, atual.id), 0) + 1;
-  const novo: Livro = { id: proximoId, ...dados };
-  acervo = [novo, ...acervo];
-  return novo;
+function configuracao(): {url: string, chave: string} {
+  const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
+  const chave = process.env.EXPO_PUBLIC_SUPABASE_KEY;
+  if (url === undefined || chave === undefined) {
+    throw new Error('Defina EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_KEY em .env.local');
+  }
+  return { url, chave};
+}
+
+function ehLivroRemoto(valor: unknown): valor is LivroRemoto {
+  if (typeof valor !== 'object' || valor === null) {
+    return false;
+  }
+  const campos = valor as Record<string, unknown>;
+  return (
+    typeof campos.id === 'number' &&
+    typeof campos.titulo === 'string' &&
+    typeof campos.autor === 'string' &&
+    typeof campos.exemplares === 'number' &&
+    (campos.sinopse === null || typeof campos.sinopse === 'string')
+  );
+}
+
+function ehListaDeLivros(valor: unknown): valor is LivroRemoto[] {
+  return Array.isArray(valor) && valor.every(ehLivroRemoto);
+}
+
+function paraLivro(remoto: LivroRemoto): Livro {
+  return {
+    id: remoto.id,
+    titulo: remoto.titulo,
+    autor: remoto.autor,
+    exemplares: remoto.exemplares,
+    sinopse: remoto.sinopse ?? undefined,
+  };
+}
+
+async function requisitar(caminho: string, metodo: 'GET' | 'POST' | 'PUT' | 'DELETE', corpo?: DadosNovoLivro): Promise<unknown> {
+  const { url, chave} = configuracao();
+  const resposta = await fetch(`${url}/rest/v1/${caminho}`, {
+    method: metodo,
+    headers: { apikey: chave, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    body: corpo === undefined ? undefined : JSON.stringify(corpo),
+  });
+  if (!resposta.ok) {
+    throw new Error(`A API respondeu ${resposta.status}`);
+  }
+  return resposta.json();
+}
+
+export async function carregarLivros(): Promise<Livro[]> {
+  const corpo = await requisitar('livros?select=*&order=id', 'GET');
+  if (!ehListaDeLivros(corpo)) {
+    throw new Error('Resposta inesperada da API');
+  }
+  return corpo.map(paraLivro);
+}
+
+export async function buscarLivro(id: number): Promise<Livro | undefined> {
+  const corpo = await requisitar(`livros?select=*&id=eq.${id}`, 'GET');
+  if (!ehListaDeLivros(corpo)) {
+    throw new Error('Resposta inesperada da API');
+  }
+  return corpo.map(paraLivro)[0];
+}
+
+export async function incluirLivro(dados: DadosNovoLivro): Promise<Livro> {
+  const corpo = await requisitar('livros?select=*', 'POST', dados);
+  if (!ehListaDeLivros(corpo) || corpo.length !== 1) {
+    throw new Error('Resposta inesperada da API');
+  }
+  return paraLivro(corpo[0]);
 }
