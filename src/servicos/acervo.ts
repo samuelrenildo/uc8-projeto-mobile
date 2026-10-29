@@ -24,13 +24,7 @@ export class ErroDaApi extends Error {
 }
 
 export function descreverErro(erro: unknown): string {
-  if (erro instanceof ErroDaApi) {
-    return `A API respondeu ${erro.status}: ${erro.message}`;
-  }
-  if (erro instanceof Error) {
-    return erro.message;
-  }
-  return 'Erro desconhecido';
+  return erro instanceof Error ? erro.message : 'Erro desconhecido';
 }
 
 function ehMensagemDeErro(valor: unknown): valor is { message: string } {
