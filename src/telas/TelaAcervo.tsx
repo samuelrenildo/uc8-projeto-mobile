@@ -1,51 +1,17 @@
-import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Botao } from '../componentes/Botao';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CartaoLivro } from '../componentes/CartaoLivro';
+import { useAcervo } from '../contexto/AcervoContexto';
 import type { RotasDaPilha } from '../navegacao/tipos';
-import { carregarLivros, descreverErro } from '../servicos/acervo';
 import { cores, espacos, larguraMaxima } from '../tema/tema';
-import type { Livro } from '../types/entidades';
 
 type TelaAcervoProps = NativeStackScreenProps<RotasDaPilha, 'Acervo'>;
 
-type EstadoAcervo =
-  | { tipo: 'carregando' }
-  | { tipo: 'erro'; mensagem: string }
-  | { tipo: 'pronto'; livros: Livro[] };
-
 export function TelaAcervo({ navigation }: TelaAcervoProps) {
-  const [estado, setEstado] = useState<EstadoAcervo>({ tipo: 'carregando' });
-  const [tentativa, setTentativa] = useState(0);
+  const { estado, recarregar } = useAcervo();
   const { width } = useWindowDimensions();
   const duasColunas = width >= larguraMaxima;
-
-  useFocusEffect(
-    useCallback(() => {
-      let cancelado = false;
-      setEstado({ tipo: 'carregando' });
-      carregarLivros()
-        .then((livros) => {
-          if (!cancelado) {
-            setEstado({ tipo: 'pronto', livros });
-          }
-        })
-        .catch((erro: unknown) => {
-          if (!cancelado) {
-            setEstado({ tipo: 'erro', mensagem: descreverErro(erro) });
-          }
-        });
-      return () => {
-        cancelado = true;
-      };
-    }, [tentativa]),
-  );
-
-  function recarregar() {
-    setTentativa(tentativa + 1);
-  }
 
   function conteudo() {
     switch (estado.tipo) {
