@@ -1,14 +1,16 @@
 import { StyleSheet, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { FormularioLivro, type DadosLivro } from '../componentes/FormularioLivro';
+import { useAcervo } from '../contexto/AcervoContexto';
 import type { RotasDaPilha } from '../navegacao/tipos';
-import { incluirLivro } from '../servicos/acervo';
 
 type TelaNovoLivroProps = NativeStackScreenProps<RotasDaPilha, 'NovoLivro'>;
 
 export function TelaNovoLivro({ navigation }: TelaNovoLivroProps) {
+  const { incluir } = useAcervo();
+
   function adicionar(dados: DadosLivro) {
-    incluirLivro(dados).then(() => {
+    incluir(dados).then(() => {
       navigation.goBack();
     });
   }
