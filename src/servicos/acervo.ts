@@ -73,17 +73,42 @@ function paraLivro(remoto: LivroRemoto): Livro {
   };
 }
 
+export class ErroDeRede extends Error {
+  constructor() {
+    super('Sem conexão com a rede');
+    this.name = 'ErroDeRede';
+    Object.setPrototypeOf(this, ErroDeRede.prototype);
+  }
+}
+
 async function requisitar(caminho: string, metodo: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', corpo?: DadosNovoLivro): Promise<unknown> {
   const { url, chave } = configuracao();
-  const resposta = await fetch(`${url}/rest/v1/${caminho}`, {
-    method: metodo,
-    headers: { apikey: chave, 'Content-Type': 'application/json', Prefer: 'return=representation' },
-    body: corpo === undefined ? undefined : JSON.stringify(corpo),
-  });
-  if (!resposta.ok) {
-    throw new ErroDaApi(resposta.status, await lerMensagemDeErro(resposta));
+  const controle = new AbortController();
+  const prazo = setTimeout(() => controle.abort(), 6000);
+  let resposta: Response;
+  try {
+    resposta = await fetch(`${url}/rest/v1/${caminho}`, {
+      method: metodo,
+      headers: { apikey: chave, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: corpo === undefined ? undefined : JSON.stringify(corpo),
+      signal: controle.signal,
+    });
+  } catch {
+    throw new ErroDeRede();
+  } finally {
+    clearTimeout(prazo);
   }
-  return resposta.json();
+
+  if (!resposta.ok) {
+    const mensagem = await lerMensagemDeErro(resposta);
+    throw new ErroDaApi(resposta.status, mensagem);
+  }
+
+  if (resposta.status === 204) {
+    return undefined;
+  }
+
+  return await resposta.json();
 }
 
 export async function carregarLivros(): Promise<Livro[]> {
