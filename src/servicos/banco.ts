@@ -111,7 +111,7 @@ export async function lerFila(): Promise<ItemDaFila[]> {
   const linhas = await banco.getAllAsync<LinhaFila>(
     'select id_fila, titulo, autor, exemplares from fila_de_envio order by id_fila',
   );
-  return linhas.map((linha) => ({
+  return linhas.map((linha: LinhaFila) => ({
     idFila: linha.id_fila,
     titulo: linha.titulo,
     autor: linha.autor,

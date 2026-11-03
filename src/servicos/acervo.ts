@@ -1,4 +1,4 @@
-import type { Livro, SituacaoEmprestimo } from '../types/entidades';
+import type { Livro } from '../types/entidades';
 
 export interface DadosNovoLivro {
   titulo: string;
@@ -16,19 +16,35 @@ interface LivroRemoto {
 
 export class ErroDaApi extends Error {
   readonly status: number;
+
   constructor(status: number, mensagem: string) {
     super(mensagem);
     this.name = 'ErroDaApi';
     this.status = status;
+    Object.setPrototypeOf(this, ErroDaApi.prototype);
+  }
+}
+
+export class ErroDeRede extends Error {
+  constructor() {
+    super('Sem conexão com a rede');
+    this.name = 'ErroDeRede';
+    Object.setPrototypeOf(this, ErroDeRede.prototype);
   }
 }
 
 export function descreverErro(erro: unknown): string {
-  return erro instanceof Error ? erro.message : 'Erro desconhecido';
+  if (erro instanceof ErroDaApi) {
+    return `A API respondeu ${erro.status}: ${erro.message}`;
+  }
+  if (erro instanceof Error) {
+    return erro.message;
+  }
+  return 'Erro desconhecido';
 }
 
 function ehMensagemDeErro(valor: unknown): valor is { message: string } {
-  return typeof valor === 'object' && valor != null && typeof (valor as Record<string, unknown>).message === 'string';
+  return typeof valor === 'object' && valor !== null && typeof (valor as Record<string, unknown>).message === 'string';
 }
 
 async function lerMensagemDeErro(resposta: Response): Promise<string> {
@@ -73,15 +89,7 @@ function paraLivro(remoto: LivroRemoto): Livro {
   };
 }
 
-export class ErroDeRede extends Error {
-  constructor() {
-    super('Sem conexão com a rede');
-    this.name = 'ErroDeRede';
-    Object.setPrototypeOf(this, ErroDeRede.prototype);
-  }
-}
-
-async function requisitar(caminho: string, metodo: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', corpo?: DadosNovoLivro): Promise<unknown> {
+async function requisitar(caminho: string, metodo: 'GET' | 'POST' = 'GET', corpo?: DadosNovoLivro): Promise<unknown> {
   const { url, chave } = configuracao();
   const controle = new AbortController();
   const prazo = setTimeout(() => controle.abort(), 6000);
@@ -98,21 +106,14 @@ async function requisitar(caminho: string, metodo: 'GET' | 'POST' | 'PUT' | 'DEL
   } finally {
     clearTimeout(prazo);
   }
-
   if (!resposta.ok) {
-    const mensagem = await lerMensagemDeErro(resposta);
-    throw new ErroDaApi(resposta.status, mensagem);
+    throw new ErroDaApi(resposta.status, await lerMensagemDeErro(resposta));
   }
-
-  if (resposta.status === 204) {
-    return undefined;
-  }
-
-  return await resposta.json();
+  return resposta.json();
 }
 
 export async function carregarLivros(): Promise<Livro[]> {
-  const corpo = await requisitar('livros?select=*&order=id', 'GET');
+  const corpo = await requisitar('livros?select=*&order=id');
   if (!ehListaDeLivros(corpo)) {
     throw new Error('Resposta inesperada da API');
   }
@@ -120,7 +121,7 @@ export async function carregarLivros(): Promise<Livro[]> {
 }
 
 export async function buscarLivro(id: number): Promise<Livro | undefined> {
-  const corpo = await requisitar(`livros?select=*&id=eq.${id}`, 'GET');
+  const corpo = await requisitar(`livros?select=*&id=eq.${id}`);
   if (!ehListaDeLivros(corpo)) {
     throw new Error('Resposta inesperada da API');
   }
