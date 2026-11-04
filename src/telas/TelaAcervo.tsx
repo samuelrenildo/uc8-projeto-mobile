@@ -9,7 +9,7 @@ import { cores, espacos, larguraMaxima } from '../tema/tema';
 type TelaAcervoProps = NativeStackScreenProps<RotasDaPilha, 'Acervo'>;
 
 export function TelaAcervo({ navigation }: TelaAcervoProps) {
-  const { estado, recarregar } = useAcervo();
+  const { estado, pendentes, recarregar } = useAcervo();
   const { width } = useWindowDimensions();
   const duasColunas = width >= larguraMaxima;
 
@@ -60,6 +60,12 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
         <Botao titulo="Recarregar" variante="secundario" onPress={recarregar} />
         <Botao titulo="Novo livro" onPress={() => navigation.navigate('NovoLivro')} />
       </View>
+      {estado.tipo === 'pronto' && estado.origem === 'aparelho' && (
+        <Text style={estilos.aviso}>Você está offline. Mostrando dados salvos no aparelho.</Text>
+      )}
+      {pendentes > 0 && (
+        <Text style={estilos.aviso}>{pendentes} livro(s) aguardando sincronização.</Text>
+      )}
       {conteudo()}
     </View>
   );
@@ -74,4 +80,5 @@ const estilos = StyleSheet.create({
   linhaDeColunas: { gap: espacos.sm },
   celula: { flex: 1 },
   detalhes: { color: cores.primario, fontWeight: 'bold', marginBottom: espacos.md },
+  aviso: { color: cores.alerta, marginBottom: espacos.sm },
 });
