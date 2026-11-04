@@ -1,40 +1,14 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useAcervo } from '../contexto/AcervoContexto';
 import type { RotasDaPilha } from '../navegacao/tipos';
-import { buscarLivro } from '../servicos/acervo';
-import type { Livro } from '../types/entidades';
 
 type TelaDetalheLivroProps = NativeStackScreenProps<RotasDaPilha, 'DetalheLivro'>;
 
 export function TelaDetalheLivro({ route }: TelaDetalheLivroProps) {
   const { id } = route.params;
-  const [livro, setLivro] = useState<Livro | undefined>(undefined);
-  const [carregando, setCarregando] = useState(true);
-
-  useEffect(() => {
-    let cancelado = false;
-    setCarregando(true);
-    buscarLivro(id).then((resultado) => {
-      if (cancelado) {
-        return;
-      }
-      setLivro(resultado);
-      setCarregando(false);
-    });
-    return () => {
-      cancelado = true;
-    };
-  }, [id]);
-
-  if (carregando) {
-    return (
-      <View style={estilos.centro}>
-        <ActivityIndicator size="large" />
-        <Text>Carregando o livro...</Text>
-      </View>
-    );
-  }
+  const { buscar } = useAcervo();
+  const livro = buscar(id);
 
   if (livro === undefined) {
     return (
