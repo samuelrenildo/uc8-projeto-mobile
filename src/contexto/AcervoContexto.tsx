@@ -1,6 +1,7 @@
+
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { carregarLivros, descreverErro, ErroDeRede, incluirLivro, type DadosNovoLivro } from '../servicos/acervo';
-import {enfileirar, guardarLivro, guardarLivros, lerFila, lerLivrosGuardados, removerDaFila,type ItemDaFila } from '../servicos/banco';
+import { enfileirar, guardarLocal, guardarUmLocal, lerFila, listarLocal, removerDaFila, type ItemDaFila } from '../banco/banco';
+import { carregarLivros, descreverErro, ErroDeRede, incluirLivro, type DadosNovoLivro} from '../servicos/acervo';
 import type { Livro } from '../types/entidades';
 
 export type EstadoAcervo =
@@ -19,6 +20,10 @@ interface ValorDoAcervo {
 const AcervoContexto = createContext<ValorDoAcervo | undefined>(undefined);
 
 let enviando = false;
+
+function avisarFalhaLocal(erro: unknown) {
+  console.warn('Não foi possível guardar no aparelho: ' + descreverErro(erro));
+}
 
 async function enviarFila(): Promise<void> {
   if (enviando) {
@@ -55,13 +60,13 @@ export function AcervoProvedor({ children }: { children: ReactNode }) {
     try {
       await enviarFila();
       const livros = await carregarLivros();
-      await guardarLivros(livros);
       if (minha === execucao.current) {
         setEstado({ tipo: 'pronto', livros, origem: 'nuvem' });
       }
+      guardarLocal(livros).catch(avisarFalhaLocal);
     } catch (erro) {
       if (!silencioso && minha === execucao.current) {
-        const guardados = await lerLivrosGuardados();
+        const guardados = await listarLocal().catch((): Livro[] => []);
         if (guardados.length > 0) {
           setEstado({ tipo: 'pronto', livros: guardados, origem: 'aparelho' });
         } else {
@@ -69,7 +74,9 @@ export function AcervoProvedor({ children }: { children: ReactNode }) {
         }
       }
     }
-    setFila(await lerFila());
+    lerFila()
+      .then(setFila)
+      .catch(avisarFalhaLocal);
   }, []);
 
   useEffect(() => {
@@ -93,7 +100,7 @@ export function AcervoProvedor({ children }: { children: ReactNode }) {
   async function incluir(dados: DadosNovoLivro): Promise<void> {
     try {
       const novo = await incluirLivro(dados);
-      await guardarLivro(novo);
+      guardarUmLocal(novo).catch(avisarFalhaLocal);
       setEstado((atual) =>
         atual.tipo === 'pronto' ? { tipo: 'pronto', livros: [...atual.livros, novo], origem: 'nuvem' } : atual,
       );
@@ -123,7 +130,7 @@ export function AcervoProvedor({ children }: { children: ReactNode }) {
 export function useAcervo(): ValorDoAcervo {
   const valor = useContext(AcervoContexto);
   if (valor === undefined) {
-    throw new Error('useAcervo deve ser usado dentro de um AcervoProvedor');
+    throw new Error('useAcervo só funciona dentro de AcervoProvedor');
   }
   return valor;
 }
