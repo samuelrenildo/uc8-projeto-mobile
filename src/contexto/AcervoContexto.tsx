@@ -1,13 +1,13 @@
-
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { enfileirar, guardarLocal, guardarUmLocal, lerFila, listarLocal, removerDaFila, type ItemDaFila } from '../banco/banco';
+import { enfileirar, guardarLivros, guardarLivro, lerFila, lerLivrosGuardados, removerDaFila, type ItemDaFila } from '../banco/banco';
 import { carregarLivros, descreverErro, ErroDeRede, incluirLivro, type DadosNovoLivro} from '../servicos/acervo';
 import type { Livro } from '../types/entidades';
 
 export type EstadoAcervo =
   | { tipo: 'carregando' }
   | { tipo: 'erro'; mensagem: string }
-  | { tipo: 'pronto'; livros: Livro[]; origem: 'nuvem' | 'aparelho' };
+  | { tipo: 'pronto'; livros: Livro[]; origem: 'nuvem' }
+  | { tipo: 'pronto'; livros: Livro[]; origem: 'aparelho'; motivo: string };
 
 interface ValorDoAcervo {
   estado: EstadoAcervo;
@@ -63,14 +63,15 @@ export function AcervoProvedor({ children }: { children: ReactNode }) {
       if (minha === execucao.current) {
         setEstado({ tipo: 'pronto', livros, origem: 'nuvem' });
       }
-      guardarLocal(livros).catch(avisarFalhaLocal);
+      guardarLivros(livros).catch(avisarFalhaLocal);
     } catch (erro) {
       if (!silencioso && minha === execucao.current) {
-        const guardados = await listarLocal().catch((): Livro[] => []);
+        const motivo = descreverErro(erro);
+        const guardados = await lerLivrosGuardados().catch((): Livro[] => []);
         if (guardados.length > 0) {
-          setEstado({ tipo: 'pronto', livros: guardados, origem: 'aparelho' });
+          setEstado({ tipo: 'pronto', livros: guardados, origem: 'aparelho', motivo });
         } else {
-          setEstado({ tipo: 'erro', mensagem: descreverErro(erro) });
+          setEstado({ tipo: 'erro', mensagem: motivo });
         }
       }
     }
@@ -100,7 +101,7 @@ export function AcervoProvedor({ children }: { children: ReactNode }) {
   async function incluir(dados: DadosNovoLivro): Promise<void> {
     try {
       const novo = await incluirLivro(dados);
-      guardarUmLocal(novo).catch(avisarFalhaLocal);
+      guardarLivro(novo).catch(avisarFalhaLocal);
       setEstado((atual) =>
         atual.tipo === 'pronto' ? { tipo: 'pronto', livros: [...atual.livros, novo], origem: 'nuvem' } : atual,
       );
@@ -114,7 +115,11 @@ export function AcervoProvedor({ children }: { children: ReactNode }) {
   }
 
   const visivel: EstadoAcervo =
-    estado.tipo === 'pronto' ? { ...estado, livros: [...estado.livros, ...fila.map(paraLivroPendente)] } : estado;
+    estado.tipo === 'pronto'
+      ? estado.origem === 'aparelho'
+        ? { ...estado, livros: [...estado.livros, ...fila.map(paraLivroPendente)], origem: 'aparelho', motivo: estado.motivo }
+        : { ...estado, livros: [...estado.livros, ...fila.map(paraLivroPendente)], origem: 'nuvem' }
+      : estado;
 
   function buscar(id: number): Livro | undefined {
     return visivel.tipo === 'pronto' ? visivel.livros.find((livro) => livro.id === id) : undefined;
