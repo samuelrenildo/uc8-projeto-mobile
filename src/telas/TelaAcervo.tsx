@@ -34,22 +34,30 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
         );
       case 'pronto':
         return (
-          <FlatList
-            key={duasColunas ? 'duas' : 'uma'}
-            data={estado.livros}
-            numColumns={duasColunas ? 2 : 1}
-            columnWrapperStyle={duasColunas ? estilos.linhaDeColunas : undefined}
-            keyExtractor={(livro) => String(livro.id)}
-            renderItem={({ item }) => (
-              <View style={estilos.celula}>
-                <CartaoLivro livro={item} />
-                <Pressable onPress={() => navigation.navigate('DetalheLivro', { id: item.id })}>
-                  <Text style={estilos.detalhes}>Ver detalhes</Text>
-                </Pressable>
-              </View>
+          <>
+            {estado.origem === 'aparelho' && (
+              <Text style={estilos.aviso}>Sem conexão: mostrando os livros guardados no aparelho ({estado.motivo})</Text>
             )}
-            ListEmptyComponent={<Text>Nenhum livro no acervo.</Text>}
-          />
+            {pendentes > 0 && (
+              <Text style={estilos.aviso}>{pendentes} livro(s) aguardando sincronização.</Text>
+            )}
+            <FlatList
+              key={duasColunas ? 'duas' : 'uma'}
+              data={estado.livros}
+              numColumns={duasColunas ? 2 : 1}
+              columnWrapperStyle={duasColunas ? estilos.linhaDeColunas : undefined}
+              keyExtractor={(livro) => String(livro.id)}
+              renderItem={({ item }) => (
+                <View style={estilos.celula}>
+                  <CartaoLivro livro={item} />
+                  <Pressable onPress={() => navigation.navigate('DetalheLivro', { id: item.id })}>
+                    <Text style={estilos.detalhes}>Ver detalhes</Text>
+                  </Pressable>
+                </View>
+              )}
+              ListEmptyComponent={<Text>Nenhum livro no acervo.</Text>}
+            />
+          </>
         );
     }
   }
@@ -60,12 +68,6 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
         <Botao titulo="Recarregar" variante="secundario" onPress={recarregar} />
         <Botao titulo="Novo livro" onPress={() => navigation.navigate('NovoLivro')} />
       </View>
-      {estado.tipo === 'pronto' && estado.origem === 'aparelho' && (
-        <Text style={estilos.aviso}>Você está offline. Mostrando dados salvos no aparelho.</Text>
-      )}
-      {pendentes > 0 && (
-        <Text style={estilos.aviso}>{pendentes} livro(s) aguardando sincronização.</Text>
-      )}
       {conteudo()}
     </View>
   );
