@@ -75,6 +75,13 @@ export async function guardarLivros(livros: Livro[]): Promise<void> {
   });
 }
 
+const db = SQLite.openDatabaseSync('banco.db');
+
+export async function contarLocal(): Promise<number> {
+  const resultado = await db.getFirstAsync<{ total: number }>('SELECT COUNT(*) as total FROM livros');
+  return resultado?.total ?? 0;
+}
+
 export async function guardarLivro(livro: Livro): Promise<void> {
   const banco = await abrir();
   await banco.runAsync(
