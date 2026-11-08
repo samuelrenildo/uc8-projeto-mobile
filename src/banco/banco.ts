@@ -1,6 +1,10 @@
 import * as SQLite from 'expo-sqlite';
+import type { DadosNovoLivro } from '../servicos/acervo';
 import type { Livro } from '../types/entidades';
-import type { DadosNovoLivro } from '../servicos/acervo.ts';
+
+export interface Pendente extends DadosNovoLivro {
+  id: number;
+}
 
 interface LinhaLivro {
   id: number;
@@ -10,42 +14,30 @@ interface LinhaLivro {
   exemplares: number;
 }
 
-interface LinhaFila {
-  id_fila: number;
-  titulo: string;
-  autor: string;
-  exemplares: number;
-}
+let bancoAberto: Promise<SQLite.SQLiteDatabase> | undefined;
 
-export interface ItemDaFila extends DadosNovoLivro {
-  idFila: number;
-}
-
-let conexao: Promise<SQLite.SQLiteDatabase> | undefined;
-
-function abrir(): Promise<SQLite.SQLiteDatabase> {
-  if (conexao === undefined) {
-    conexao = (async () => {
-      const banco = await SQLite.openDatabaseAsync('acervo.db');
-      await banco.execAsync(`
-        create table if not exists livros_guardados (
-          id integer primary key,
-          titulo text not null,
-          autor text not null,
-          sinopse text,
-          exemplares integer not null
+function banco(): Promise<SQLite.SQLiteDatabase> {
+  if (bancoAberto === undefined) {
+    bancoAberto = SQLite.openDatabaseAsync('acervo.db').then(async (db) => {
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS livros (
+          id INTEGER PRIMARY KEY NOT NULL,
+          titulo TEXT NOT NULL,
+          autor TEXT NOT NULL,
+          sinopse TEXT,
+          exemplares INTEGER NOT NULL
         );
-        create table if not exists fila_de_envio (
-          id_fila integer primary key autoincrement,
-          titulo text not null,
-          autor text not null,
-          exemplares integer not null
+        CREATE TABLE IF NOT EXISTS pendentes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+          titulo TEXT NOT NULL,
+          autor TEXT NOT NULL,
+          exemplares INTEGER NOT NULL
         );
       `);
-      return banco;
-    })();
+      return db;
+    });
   }
-  return conexao;
+  return bancoAberto;
 }
 
 function paraLivro(linha: LinhaLivro): Livro {
@@ -58,75 +50,48 @@ function paraLivro(linha: LinhaLivro): Livro {
   };
 }
 
-export async function guardarLivros(livros: Livro[]): Promise<void> {
-  const banco = await abrir();
-  await banco.withTransactionAsync(async () => {
-    await banco.runAsync('delete from livros_guardados');
+export async function listarLocal(): Promise<Livro[]> {
+  const db = await banco();
+  const linhas = await db.getAllAsync<LinhaLivro>(
+    'SELECT id, titulo, autor, sinopse, exemplares FROM livros ORDER BY id',
+  );
+  return linhas.map(paraLivro);
+}
+
+export async function guardarLocal(livros: Livro[]): Promise<void> {
+  const db = await banco();
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM livros');
     for (const livro of livros) {
-      await banco.runAsync(
-        'insert into livros_guardados (id, titulo, autor, sinopse, exemplares) values (?, ?, ?, ?, ?)',
-        livro.id,
-        livro.titulo,
-        livro.autor,
-        livro.sinopse ?? null,
-        livro.exemplares,
+      await db.runAsync(
+        'INSERT INTO livros (id, titulo, autor, sinopse, exemplares) VALUES (?, ?, ?, ?, ?)',
+        [livro.id, livro.titulo, livro.autor, livro.sinopse ?? null, livro.exemplares],
       );
     }
   });
 }
 
-const db = SQLite.openDatabaseSync('banco.db');
-
 export async function contarLocal(): Promise<number> {
-  const resultado = await db.getFirstAsync<{ total: number }>('SELECT COUNT(*) as total FROM livros');
-  return resultado?.total ?? 0;
+  const db = await banco();
+  const linha = await db.getFirstAsync<{ total: number }>('SELECT COUNT(*) AS total FROM livros');
+  return linha?.total ?? 0;
 }
 
-export async function guardarLivro(livro: Livro): Promise<void> {
-  const banco = await abrir();
-  await banco.runAsync(
-    'insert or replace into livros_guardados (id, titulo, autor, sinopse, exemplares) values (?, ?, ?, ?, ?)',
-    livro.id,
-    livro.titulo,
-    livro.autor,
-    livro.sinopse ?? null,
-    livro.exemplares,
+export async function listarPendentes(): Promise<Pendente[]> {
+  const db = await banco();
+  return db.getAllAsync<Pendente>('SELECT id, titulo, autor, exemplares FROM pendentes ORDER BY id');
+}
+
+export async function guardarPendente(dados: DadosNovoLivro): Promise<Pendente> {
+  const db = await banco();
+  const resultado = await db.runAsync(
+    'INSERT INTO pendentes (titulo, autor, exemplares) VALUES (?, ?, ?)',
+    [dados.titulo, dados.autor, dados.exemplares],
   );
+  return { id: resultado.lastInsertRowId, ...dados };
 }
 
-export async function lerLivrosGuardados(): Promise<Livro[]> {
-  const banco = await abrir();
-  const linhas = await banco.getAllAsync<LinhaLivro>(
-    'select id, titulo, autor, sinopse, exemplares from livros_guardados order by id',
-  );
-  return linhas.map(paraLivro);
-}
-
-export async function enfileirar(dados: DadosNovoLivro): Promise<ItemDaFila> {
-  const banco = await abrir();
-  const resultado = await banco.runAsync(
-    'insert into fila_de_envio (titulo, autor, exemplares) values (?, ?, ?)',
-    dados.titulo,
-    dados.autor,
-    dados.exemplares,
-  );
-  return { idFila: resultado.lastInsertRowId, ...dados };
-}
-
-export async function lerFila(): Promise<ItemDaFila[]> {
-  const banco = await abrir();
-  const linhas = await banco.getAllAsync<LinhaFila>(
-    'select id_fila, titulo, autor, exemplares from fila_de_envio order by id_fila',
-  );
-  return linhas.map((linha: LinhaFila) => ({
-    idFila: linha.id_fila,
-    titulo: linha.titulo,
-    autor: linha.autor,
-    exemplares: linha.exemplares,
-  }));
-}
-
-export async function removerDaFila(idFila: number): Promise<void> {
-  const banco = await abrir();
-  await banco.runAsync('delete from fila_de_envio where id_fila = ?', idFila);
+export async function removerPendente(id: number): Promise<void> {
+  const db = await banco();
+  await db.runAsync('DELETE FROM pendentes WHERE id = ?', [id]);
 }
