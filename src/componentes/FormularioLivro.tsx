@@ -22,6 +22,9 @@ export function FormularioLivro({ aoAdicionar }: FormularioLivroProps) {
 
   const tituloVazio = titulo.trim() === '';
   const erroTitulo = tocado && tituloVazio ? 'Informe o título' : undefined;
+  const quantidade = Number(exemplares);
+  const exemplaresInvalido = exemplares.trim() === '' || !Number.isInteger(quantidade) || quantidade < 0;
+  const erroExemplares = exemplaresInvalido ? 'Informe um número inteiro, zero ou maior' : undefined;
 
   function mudarTitulo(texto: string) {
     setTocado(true);
@@ -29,7 +32,6 @@ export function FormularioLivro({ aoAdicionar }: FormularioLivroProps) {
   }
 
   function enviar() {
-    const quantidade = Number(exemplares);
     aoAdicionar({ titulo: titulo.trim(), autor, exemplares: quantidade });
     setTitulo('');
     setAutor('');
@@ -41,9 +43,9 @@ export function FormularioLivro({ aoAdicionar }: FormularioLivroProps) {
     <View style={estilos.formulario}>
       <Campo rotulo="Título" valor={titulo} aoMudar={mudarTitulo} erro={erroTitulo} />
       <Campo rotulo="Autor" valor={autor} aoMudar={setAutor} />
-      <Campo rotulo="Exemplares" valor={exemplares} aoMudar={setExemplares} tipoDeTeclado="numeric" />
+      <Campo rotulo="Exemplares" valor={exemplares} aoMudar={setExemplares} tipoDeTeclado="numeric" erro={erroExemplares} />
       <View style={estilos.acoes}>
-        <Botao titulo="Adicionar" onPress={enviar} desabilitado={tituloVazio} />
+        <Botao titulo="Adicionar" onPress={enviar} desabilitado={tituloVazio || exemplaresInvalido} />
       </View>
     </View>
   );
