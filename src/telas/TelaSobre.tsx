@@ -2,20 +2,28 @@ import { useCallback, useState } from 'react';
 import { PixelRatio, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { contarLocal } from '../banco/banco';
+import { registrarErro } from '../erros/erros';
 import { cores, espacos } from '../tema/tema';
 
 export function TelaSobre() {
   const { width, height, fontScale } = useWindowDimensions();
-  const [guardados, setGuardados] = useState<number | undefined>(undefined);
+  const [guardados, setGuardados] = useState('...');
 
   useFocusEffect(
     useCallback(() => {
       let cancelado = false;
-      contarLocal().then((total) => {
-        if (!cancelado) {
-          setGuardados(total);
-        }
-      });
+      contarLocal()
+        .then((total) => {
+          if (!cancelado) {
+            setGuardados(String(total));
+          }
+        })
+        .catch((erro: unknown) => {
+          registrarErro('contagem', erro);
+          if (!cancelado) {
+            setGuardados('indisponível');
+          }
+        });
       return () => {
         cancelado = true;
       };
@@ -29,7 +37,7 @@ export function TelaSobre() {
       <Text style={estilos.medida}>Janela: {Math.round(width)} x {Math.round(height)} dp</Text>
       <Text style={estilos.medida}>Densidade: {PixelRatio.get()}x</Text>
       <Text style={estilos.medida}>Escala da fonte: {fontScale}</Text>
-      <Text style={estilos.medida}>Guardados no aparelho: {guardados === undefined ? '...' : guardados}</Text>
+      <Text style={estilos.medida}>Guardados no aparelho: {guardados}</Text>
     </View>
   );
 }
