@@ -20,3 +20,4 @@ insert into public.livros (titulo, autor, sinopse, exemplares) values
 ('O Alquimista', 'Paulo Coelho', 'Um pastor busca seu tesouro seguindo os sinais do destino.', 3),
 ('1984', 'George Orwell', null, 1),
 ('Dom Casmurro', 'Machado de Assis', null, 2);
+revoke update, delete on public.livros from anon;
