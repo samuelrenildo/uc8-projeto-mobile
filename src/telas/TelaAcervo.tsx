@@ -9,7 +9,7 @@ import { cores, espacos, larguraMaxima } from '../tema/tema';
 type TelaAcervoProps = NativeStackScreenProps<RotasDaPilha, 'Acervo'>;
 
 export function TelaAcervo({ navigation }: TelaAcervoProps) {
-  const { estado, pendentes, recarregar } = useAcervo();
+  const { estado, recarregar } = useAcervo();
   const { width } = useWindowDimensions();
   const duasColunas = width >= larguraMaxima;
 
@@ -36,10 +36,14 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
         return (
           <>
             {estado.origem === 'aparelho' && (
-              <Text style={estilos.aviso}>Sem conexão: mostrando os livros guardados no aparelho ({estado.motivo})</Text>
+              <Text style={estilos.aviso}>
+                Sem conexão: mostrando os livros guardados no aparelho ({estado.motivo})
+              </Text>
             )}
-            {pendentes > 0 && (
-              <Text style={estilos.aviso}>{pendentes} livro(s) aguardando sincronização.</Text>
+            {estado.pendentes.length > 0 && (
+              <Text style={estilos.aviso}>
+                A enviar ({estado.pendentes.length}): {estado.pendentes.map((pendente) => pendente.titulo).join(', ')}
+              </Text>
             )}
             <FlatList
               key={duasColunas ? 'duas' : 'uma'}
@@ -78,9 +82,9 @@ const estilos = StyleSheet.create({
   barra: { flexDirection: 'row', gap: espacos.sm, marginBottom: espacos.md },
   centro: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: espacos.sm },
   erro: { color: cores.erro, fontWeight: 'bold' },
+  aviso: { color: cores.alerta, marginBottom: espacos.sm },
   detalheDoErro: { color: cores.textoSecundario, textAlign: 'center' },
   linhaDeColunas: { gap: espacos.sm },
   celula: { flex: 1 },
   detalhes: { color: cores.primario, fontWeight: 'bold', marginBottom: espacos.md },
-  aviso: { color: cores.alerta, marginBottom: espacos.sm },
 });
