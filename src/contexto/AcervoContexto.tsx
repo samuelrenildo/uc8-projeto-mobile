@@ -1,13 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import {
-  guardarLocal,
-  guardarPendente,
-  listarLocal,
-  listarPendentes,
-  removerPendente,
-  type Pendente,
-} from '../banco/banco';
-import { ErroDaApi, carregarLivros, descreverErro, incluirLivro, type DadosNovoLivro } from '../servicos/acervo';
+import { guardarLocal, guardarPendente, listarLocal, listarPendentes, removerPendente, type Pendente } from '../banco/banco';
+import { ErroDeValidacao, registrarErro } from '../erros/erros';
+import { ErroDaApi, carregarLivros, incluirLivro, type DadosNovoLivro } from '../servicos/acervo';
 import type { Livro } from '../types/entidades';
 
 export type EstadoAcervo =
@@ -33,18 +27,24 @@ export function AcervoProvedor({ children }: { children: ReactNode }) {
     let cancelado = false;
     setEstado({ tipo: 'carregando' });
     sincronizar()
+      .catch((erro: unknown) => {
+        registrarErro('sincronizar', erro);
+      })
       .then(() => carregarLivros())
       .then(async (livros) => {
-        const pendentes = await listarPendentes();
+        const pendentes = await listarPendentes().catch((erro: unknown) => {
+          registrarErro('pendentes', erro);
+          return [];
+        });
         if (!cancelado) {
           setEstado({ tipo: 'pronto', livros, pendentes, origem: 'nuvem' });
         }
         guardarLocal(livros).catch((erro: unknown) => {
-          console.warn('Não foi possível guardar no aparelho: ' + descreverErro(erro));
+          registrarErro('guardar no aparelho', erro);
         });
       })
       .catch((erro: unknown) => {
-        const motivo = descreverErro(erro);
+        const motivo = registrarErro('carga', erro).mensagem;
         Promise.all([listarLocal(), listarPendentes()])
           .then(([guardados, pendentes]) => {
             if (cancelado) {
@@ -58,7 +58,7 @@ export function AcervoProvedor({ children }: { children: ReactNode }) {
           })
           .catch((erroLocal: unknown) => {
             if (!cancelado) {
-              setEstado({ tipo: 'erro', mensagem: motivo + ' / ' + descreverErro(erroLocal) });
+              setEstado({ tipo: 'erro', mensagem: registrarErro('leitura do aparelho', erroLocal).mensagem });
             }
           });
       });
@@ -77,7 +77,7 @@ export function AcervoProvedor({ children }: { children: ReactNode }) {
         await incluirLivro({ titulo: pendente.titulo, autor: pendente.autor, exemplares: pendente.exemplares });
       } catch (erro: unknown) {
         if (erro instanceof ErroDaApi) {
-          console.warn('Pendente descartado pela API: ' + descreverErro(erro));
+          registrarErro('pendente descartado', erro);
         } else {
           return;
         }
@@ -87,6 +87,12 @@ export function AcervoProvedor({ children }: { children: ReactNode }) {
   }
 
   async function incluir(dados: DadosNovoLivro): Promise<void> {
+    if (dados.titulo.trim() === '') {
+      throw new ErroDeValidacao('Informe o título.');
+    }
+    if (!Number.isInteger(dados.exemplares) || dados.exemplares < 0) {
+      throw new ErroDeValidacao('Exemplares precisa ser um número inteiro, zero ou maior.');
+    }
     try {
       const novo = await incluirLivro(dados);
       setEstado((atual) => (atual.tipo === 'pronto' ? { ...atual, livros: [...atual.livros, novo] } : atual));
@@ -95,9 +101,7 @@ export function AcervoProvedor({ children }: { children: ReactNode }) {
         throw erro;
       }
       const pendente = await guardarPendente(dados);
-      setEstado((atual) =>
-        atual.tipo === 'pronto' ? { ...atual, pendentes: [...atual.pendentes, pendente] } : atual,
-      );
+      setEstado((atual) => (atual.tipo === 'pronto' ? { ...atual, pendentes: [...atual.pendentes, pendente] } : atual));
     }
   }
 

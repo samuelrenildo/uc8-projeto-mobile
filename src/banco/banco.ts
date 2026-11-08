@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { ErroDoBanco } from '../erros/erros';
 import type { DadosNovoLivro } from '../servicos/acervo';
 import type { Livro } from '../types/entidades';
 
@@ -50,48 +51,63 @@ function paraLivro(linha: LinhaLivro): Livro {
   };
 }
 
-export async function listarLocal(): Promise<Livro[]> {
-  const db = await banco();
-  const linhas = await db.getAllAsync<LinhaLivro>(
-    'SELECT id, titulo, autor, sinopse, exemplares FROM livros ORDER BY id',
-  );
-  return linhas.map(paraLivro);
+async function noBanco<T>(operacao: (db: SQLite.SQLiteDatabase) => Promise<T>): Promise<T> {
+  try {
+    const db = await banco();
+    return await operacao(db);
+  } catch (erro: unknown) {
+    throw new ErroDoBanco(erro instanceof Error ? erro.message : String(erro));
+  }
 }
 
-export async function guardarLocal(livros: Livro[]): Promise<void> {
-  const db = await banco();
-  await db.withTransactionAsync(async () => {
-    await db.runAsync('DELETE FROM livros');
-    for (const livro of livros) {
-      await db.runAsync(
-        'INSERT INTO livros (id, titulo, autor, sinopse, exemplares) VALUES (?, ?, ?, ?, ?)',
-        [livro.id, livro.titulo, livro.autor, livro.sinopse ?? null, livro.exemplares],
-      );
-    }
+export function listarLocal(): Promise<Livro[]> {
+  return noBanco(async (db) => {
+    const linhas = await db.getAllAsync<LinhaLivro>('SELECT id, titulo, autor, sinopse, exemplares FROM livros ORDER BY id');
+    return linhas.map(paraLivro);
   });
 }
 
-export async function contarLocal(): Promise<number> {
-  const db = await banco();
-  const linha = await db.getFirstAsync<{ total: number }>('SELECT COUNT(*) AS total FROM livros');
-  return linha?.total ?? 0;
-}
-
-export async function listarPendentes(): Promise<Pendente[]> {
-  const db = await banco();
-  return db.getAllAsync<Pendente>('SELECT id, titulo, autor, exemplares FROM pendentes ORDER BY id');
-}
-
-export async function guardarPendente(dados: DadosNovoLivro): Promise<Pendente> {
-  const db = await banco();
-  const resultado = await db.runAsync(
-    'INSERT INTO pendentes (titulo, autor, exemplares) VALUES (?, ?, ?)',
-    [dados.titulo, dados.autor, dados.exemplares],
+export function guardarLocal(livros: Livro[]): Promise<void> {
+  return noBanco((db) =>
+    db.withTransactionAsync(async () => {
+      await db.runAsync('DELETE FROM livros');
+      for (const livro of livros) {
+        await db.runAsync('INSERT INTO livros (id, titulo, autor, sinopse, exemplares) VALUES (?, ?, ?, ?, ?)', [
+          livro.id,
+          livro.titulo,
+          livro.autor,
+          livro.sinopse ?? null,
+          livro.exemplares,
+        ]);
+      }
+    }),
   );
-  return { id: resultado.lastInsertRowId, ...dados };
 }
 
-export async function removerPendente(id: number): Promise<void> {
-  const db = await banco();
-  await db.runAsync('DELETE FROM pendentes WHERE id = ?', [id]);
+export function contarLocal(): Promise<number> {
+  return noBanco(async (db) => {
+    const linha = await db.getFirstAsync<{ total: number }>('SELECT COUNT(*) AS total FROM livros');
+    return linha?.total ?? 0;
+  });
+}
+
+export function listarPendentes(): Promise<Pendente[]> {
+  return noBanco((db) => db.getAllAsync<Pendente>('SELECT id, titulo, autor, exemplares FROM pendentes ORDER BY id'));
+}
+
+export function guardarPendente(dados: DadosNovoLivro): Promise<Pendente> {
+  return noBanco(async (db) => {
+    const resultado = await db.runAsync('INSERT INTO pendentes (titulo, autor, exemplares) VALUES (?, ?, ?)', [
+      dados.titulo,
+      dados.autor,
+      dados.exemplares,
+    ]);
+    return { id: resultado.lastInsertRowId, ...dados };
+  });
+}
+
+export function removerPendente(id: number): Promise<void> {
+  return noBanco(async (db) => {
+    await db.runAsync('DELETE FROM pendentes WHERE id = ?', [id]);
+  });
 }

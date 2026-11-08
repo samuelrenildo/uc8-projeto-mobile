@@ -1,6 +1,6 @@
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { Botao } from '../componentes/Botao';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Botao } from '../componentes/Botao';
 import { CartaoLivro } from '../componentes/CartaoLivro';
 import { useAcervo } from '../contexto/AcervoContexto';
 import type { RotasDaPilha } from '../navegacao/tipos';
@@ -36,9 +36,7 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
         return (
           <>
             {estado.origem === 'aparelho' && (
-              <Text style={estilos.aviso}>
-                Sem conexão: mostrando os livros guardados no aparelho ({estado.motivo})
-              </Text>
+              <Text style={estilos.aviso}>Mostrando os livros guardados no aparelho: {estado.motivo}</Text>
             )}
             {estado.pendentes.length > 0 && (
               <Text style={estilos.aviso}>
