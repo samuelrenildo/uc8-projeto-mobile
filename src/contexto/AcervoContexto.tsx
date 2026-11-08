@@ -1,17 +1,23 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { enfileirar, guardarLivros, guardarLivro, lerFila, lerLivrosGuardados, removerDaFila, type ItemDaFila } from '../banco/banco';
-import { carregarLivros, descreverErro, ErroDeRede, incluirLivro, type DadosNovoLivro} from '../servicos/acervo';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import {
+  guardarLocal,
+  guardarPendente,
+  listarLocal,
+  listarPendentes,
+  removerPendente,
+  type Pendente,
+} from '../banco/banco';
+import { ErroDaApi, carregarLivros, descreverErro, incluirLivro, type DadosNovoLivro } from '../servicos/acervo';
 import type { Livro } from '../types/entidades';
 
 export type EstadoAcervo =
   | { tipo: 'carregando' }
   | { tipo: 'erro'; mensagem: string }
-  | { tipo: 'pronto'; livros: Livro[]; origem: 'nuvem' }
-  | { tipo: 'pronto'; livros: Livro[]; origem: 'aparelho'; motivo: string };
+  | { tipo: 'pronto'; livros: Livro[]; pendentes: Pendente[]; origem: 'nuvem' }
+  | { tipo: 'pronto'; livros: Livro[]; pendentes: Pendente[]; origem: 'aparelho'; motivo: string };
 
 interface ValorDoAcervo {
   estado: EstadoAcervo;
-  pendentes: number;
   recarregar: () => void;
   incluir: (dados: DadosNovoLivro) => Promise<void>;
   buscar: (id: number) => Livro | undefined;
@@ -19,117 +25,87 @@ interface ValorDoAcervo {
 
 const AcervoContexto = createContext<ValorDoAcervo | undefined>(undefined);
 
-let enviando = false;
-
-function avisarFalhaLocal(erro: unknown) {
-  console.warn('Não foi possível guardar no aparelho: ' + descreverErro(erro));
-}
-
-async function enviarFila(): Promise<void> {
-  if (enviando) {
-    return;
-  }
-  enviando = true;
-  try {
-    const itens = await lerFila();
-    for (const item of itens) {
-      await incluirLivro({ titulo: item.titulo, autor: item.autor, exemplares: item.exemplares });
-      await removerDaFila(item.idFila);
-    }
-  } finally {
-    enviando = false;
-  }
-}
-
-function paraLivroPendente(item: ItemDaFila): Livro {
-  return { id: -item.idFila, titulo: item.titulo, autor: item.autor, exemplares: item.exemplares };
-}
-
 export function AcervoProvedor({ children }: { children: ReactNode }) {
   const [estado, setEstado] = useState<EstadoAcervo>({ tipo: 'carregando' });
-  const [fila, setFila] = useState<ItemDaFila[]>([]);
   const [tentativa, setTentativa] = useState(0);
-  const execucao = useRef(0);
 
-  const sincronizar = useCallback(async (silencioso: boolean) => {
-    execucao.current += 1;
-    const minha = execucao.current;
-    if (!silencioso) {
-      setEstado({ tipo: 'carregando' });
-    }
-    try {
-      await enviarFila();
-      const livros = await carregarLivros();
-      if (minha === execucao.current) {
-        setEstado({ tipo: 'pronto', livros, origem: 'nuvem' });
-      }
-      guardarLivros(livros).catch(avisarFalhaLocal);
-    } catch (erro) {
-      if (!silencioso && minha === execucao.current) {
-        const motivo = descreverErro(erro);
-        const guardados = await lerLivrosGuardados().catch((): Livro[] => []);
-        if (guardados.length > 0) {
-          setEstado({ tipo: 'pronto', livros: guardados, origem: 'aparelho', motivo });
-        } else {
-          setEstado({ tipo: 'erro', mensagem: motivo });
+  useEffect(() => {
+    let cancelado = false;
+    setEstado({ tipo: 'carregando' });
+    sincronizar()
+      .then(() => carregarLivros())
+      .then(async (livros) => {
+        const pendentes = await listarPendentes();
+        if (!cancelado) {
+          setEstado({ tipo: 'pronto', livros, pendentes, origem: 'nuvem' });
         }
-      }
-    }
-    lerFila()
-      .then(setFila)
-      .catch(avisarFalhaLocal);
-  }, []);
-
-  useEffect(() => {
-    void sincronizar(false);
-  }, [tentativa, sincronizar]);
-
-  useEffect(() => {
-    if (fila.length === 0) {
-      return;
-    }
-    const intervalo = setInterval(() => {
-      void sincronizar(true);
-    }, 15000);
-    return () => clearInterval(intervalo);
-  }, [fila.length, sincronizar]);
+        guardarLocal(livros).catch((erro: unknown) => {
+          console.warn('Não foi possível guardar no aparelho: ' + descreverErro(erro));
+        });
+      })
+      .catch((erro: unknown) => {
+        const motivo = descreverErro(erro);
+        Promise.all([listarLocal(), listarPendentes()])
+          .then(([guardados, pendentes]) => {
+            if (cancelado) {
+              return;
+            }
+            if (guardados.length > 0 || pendentes.length > 0) {
+              setEstado({ tipo: 'pronto', livros: guardados, pendentes, origem: 'aparelho', motivo });
+            } else {
+              setEstado({ tipo: 'erro', mensagem: motivo });
+            }
+          })
+          .catch((erroLocal: unknown) => {
+            if (!cancelado) {
+              setEstado({ tipo: 'erro', mensagem: motivo + ' / ' + descreverErro(erroLocal) });
+            }
+          });
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [tentativa]);
 
   function recarregar() {
     setTentativa(tentativa + 1);
   }
 
-  async function incluir(dados: DadosNovoLivro): Promise<void> {
-    try {
-      const novo = await incluirLivro(dados);
-      guardarLivro(novo).catch(avisarFalhaLocal);
-      setEstado((atual) =>
-        atual.tipo === 'pronto' ? { tipo: 'pronto', livros: [...atual.livros, novo], origem: 'nuvem' } : atual,
-      );
-    } catch (erro) {
-      if (!(erro instanceof ErroDeRede)) {
-        throw erro;
+  async function sincronizar(): Promise<void> {
+    for (const pendente of await listarPendentes()) {
+      try {
+        await incluirLivro({ titulo: pendente.titulo, autor: pendente.autor, exemplares: pendente.exemplares });
+      } catch (erro: unknown) {
+        if (erro instanceof ErroDaApi) {
+          console.warn('Pendente descartado pela API: ' + descreverErro(erro));
+        } else {
+          return;
+        }
       }
-      const item = await enfileirar(dados);
-      setFila((atual) => [...atual, item]);
+      await removerPendente(pendente.id);
     }
   }
 
-  const visivel: EstadoAcervo =
-    estado.tipo === 'pronto'
-      ? estado.origem === 'aparelho'
-        ? { ...estado, livros: [...estado.livros, ...fila.map(paraLivroPendente)], origem: 'aparelho', motivo: estado.motivo }
-        : { ...estado, livros: [...estado.livros, ...fila.map(paraLivroPendente)], origem: 'nuvem' }
-      : estado;
-
-  function buscar(id: number): Livro | undefined {
-    return visivel.tipo === 'pronto' ? visivel.livros.find((livro) => livro.id === id) : undefined;
+  async function incluir(dados: DadosNovoLivro): Promise<void> {
+    try {
+      const novo = await incluirLivro(dados);
+      setEstado((atual) => (atual.tipo === 'pronto' ? { ...atual, livros: [...atual.livros, novo] } : atual));
+    } catch (erro: unknown) {
+      if (erro instanceof ErroDaApi) {
+        throw erro;
+      }
+      const pendente = await guardarPendente(dados);
+      setEstado((atual) =>
+        atual.tipo === 'pronto' ? { ...atual, pendentes: [...atual.pendentes, pendente] } : atual,
+      );
+    }
   }
 
-  return (
-    <AcervoContexto.Provider value={{ estado: visivel, pendentes: fila.length, recarregar, incluir, buscar }}>
-      {children}
-    </AcervoContexto.Provider>
-  );
+  function buscar(id: number): Livro | undefined {
+    return estado.tipo === 'pronto' ? estado.livros.find((livro) => livro.id === id) : undefined;
+  }
+
+  return <AcervoContexto.Provider value={{ estado, recarregar, incluir, buscar }}>{children}</AcervoContexto.Provider>;
 }
 
 export function useAcervo(): ValorDoAcervo {
