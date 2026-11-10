@@ -1,121 +1,147 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { guardarLocal, guardarPendente, listarLocal, listarPendentes, removerPendente, type Pendente } from '../banco/banco';
-import { ErroDeValidacao, registrarErro } from '../erros/erros';
-import { ErroDaApi, carregarLivros, incluirLivro, type DadosNovoLivro } from '../servicos/acervo';
-import type { Livro } from '../types/entidades';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { 
+  listarLivros, 
+  emprestarLivro as apiEmprestar, 
+  devolverEmprestimoPorLivro as apiDevolver,
+  inserirLivro as apiInserirLivro,
+  cadastrarLeitor as apiCadastrarLeitor,
+  listarLeitores as apiListarLeitores,
+  atualizarAutorLivro as apiAtualizarAutor,
+  buscarLivrosPorTermo as apiBuscarLivros,
+  inicializarTabelasExtras,
+  LeitorBD,
+  LivroBD
+} from '../data/bibliotecaService';
+import { inicializarBanco } from '../data/database';
 
-export type EstadoAcervo =
+export type Livro = LivroBD;
+export type Leitor = LeitorBD;
+
+type EstadoAcervo = 
   | { tipo: 'carregando' }
-  | { tipo: 'erro'; mensagem: string }
-  | { tipo: 'pronto'; livros: Livro[]; pendentes: Pendente[]; origem: 'nuvem' }
-  | { tipo: 'pronto'; livros: Livro[]; pendentes: Pendente[]; origem: 'aparelho'; motivo: string };
+  | { tipo: 'pronto'; livros: Livro[]; leitores: Leitor[] }
+  | { tipo: 'erro'; mensagem: string };
 
-interface ValorDoAcervo {
+interface AcervoContextoData {
   estado: EstadoAcervo;
-  recarregar: () => void;
-  incluir: (dados: DadosNovoLivro) => Promise<void>;
-  buscar: (id: number) => Livro | undefined;
+  recarregarAcervo: () => Promise<void>;
+  emprestarLivro: (idLivro: number, idLeitor: number) => Promise<void>;
+  devolverLivro: (idLivro: number) => Promise<void>;
+  buscar: (id: number) => Promise<Livro | null>;
+  incluir: (novoLivro: Omit<Livro, 'id'>) => Promise<void>;
+  cadastrarLeitor: (novoLeitor: { nome: string; matricula: string; telefone?: string; email?: string }) => Promise<void>;
+  atualizarAutor: (idLivro: number, novoAutor: string) => Promise<void>;
+  buscarPorTermo: (termo: string) => Promise<Livro[]>;
 }
 
-const AcervoContexto = createContext<ValorDoAcervo | undefined>(undefined);
+const AcervoContexto = createContext<AcervoContextoData>({} as AcervoContextoData);
 
 export function AcervoProvedor({ children }: { children: ReactNode }) {
   const [estado, setEstado] = useState<EstadoAcervo>({ tipo: 'carregando' });
-  const [tentativa, setTentativa] = useState(0);
+
+  async function recarregarAcervo(): Promise<void> {
+    try {
+      await inicializarBanco();
+      await inicializarTabelasExtras();
+      const livros = await listarLivros();
+      const leitores = await apiListarLeitores();
+      setEstado({ tipo: 'pronto', livros, leitores });
+    } catch (erro: unknown) {
+      console.error(erro);
+      setEstado({ tipo: 'erro', mensagem: 'Erro ao carregar os dados do sistema.' });
+    }
+  }
 
   useEffect(() => {
-    let cancelado = false;
-    setEstado({ tipo: 'carregando' });
-    sincronizar()
-      .catch((erro: unknown) => {
-        registrarErro('sincronizar', erro);
-      })
-      .then(() => carregarLivros())
-      .then(async (livros) => {
-        const pendentes = await listarPendentes().catch((erro: unknown) => {
-          registrarErro('pendentes', erro);
-          return [];
-        });
-        if (!cancelado) {
-          setEstado({ tipo: 'pronto', livros, pendentes, origem: 'nuvem' });
-        }
-        guardarLocal(livros).catch((erro: unknown) => {
-          registrarErro('guardar no aparelho', erro);
-        });
-      })
-      .catch((erro: unknown) => {
-        const motivo = registrarErro('carga', erro).mensagem;
-        Promise.all([listarLocal(), listarPendentes()])
-          .then(([guardados, pendentes]) => {
-            if (cancelado) {
-              return;
-            }
-            if (guardados.length > 0 || pendentes.length > 0) {
-              setEstado({ tipo: 'pronto', livros: guardados, pendentes, origem: 'aparelho', motivo });
-            } else {
-              setEstado({ tipo: 'erro', mensagem: motivo });
-            }
-          })
-          .catch((erroLocal: unknown) => {
-            if (!cancelado) {
-              setEstado({ tipo: 'erro', mensagem: registrarErro('leitura do aparelho', erroLocal).mensagem });
-            }
-          });
-      });
-    return () => {
-      cancelado = true;
-    };
-  }, [tentativa]);
+    recarregarAcervo();
+  }, []);
 
-  function recarregar() {
-    setTentativa(tentativa + 1);
-  }
-
-  async function sincronizar(): Promise<void> {
-    for (const pendente of await listarPendentes()) {
-      try {
-        await incluirLivro({ titulo: pendente.titulo, autor: pendente.autor, exemplares: pendente.exemplares });
-      } catch (erro: unknown) {
-        if (erro instanceof ErroDaApi) {
-          registrarErro('pendente descartado', erro);
-        } else {
-          return;
-        }
-      }
-      await removerPendente(pendente.id);
-    }
-  }
-
-  async function incluir(dados: DadosNovoLivro): Promise<void> {
-    if (dados.titulo.trim() === '') {
-      throw new ErroDeValidacao('Informe o título.');
-    }
-    if (!Number.isInteger(dados.exemplares) || dados.exemplares < 0) {
-      throw new ErroDeValidacao('Exemplares precisa ser um número inteiro, zero ou maior.');
-    }
+  async function emprestarLivro(idLivro: number, idLeitor: number): Promise<void> {
     try {
-      const novo = await incluirLivro(dados);
-      setEstado((atual) => (atual.tipo === 'pronto' ? { ...atual, livros: [...atual.livros, novo] } : atual));
+      await apiEmprestar(idLivro, idLeitor);
+      await recarregarAcervo();
     } catch (erro: unknown) {
-      if (erro instanceof ErroDaApi) {
-        throw erro;
-      }
-      const pendente = await guardarPendente(dados);
-      setEstado((atual) => (atual.tipo === 'pronto' ? { ...atual, pendentes: [...atual.pendentes, pendente] } : atual));
+      if (erro instanceof Error) throw new Error(erro.message);
+      throw new Error('Erro ao realizar empréstimo.');
     }
   }
 
-  function buscar(id: number): Livro | undefined {
-    return estado.tipo === 'pronto' ? estado.livros.find((livro) => livro.id === id) : undefined;
+  async function devolverLivro(idLivro: number): Promise<void> {
+    try {
+      await apiDevolver(idLivro);
+      await recarregarAcervo();
+    } catch (erro: unknown) {
+      if (erro instanceof Error) throw new Error(erro.message);
+      throw new Error('Erro ao realizar devolução.');
+    }
   }
 
-  return <AcervoContexto.Provider value={{ estado, recarregar, incluir, buscar }}>{children}</AcervoContexto.Provider>;
+  async function buscar(id: number): Promise<Livro | null> {
+    if (estado.tipo === 'pronto') {
+      const encontrado = estado.livros.find((l: Livro) => l.id === id);
+      if (encontrado) return encontrado;
+    }
+    return null;
+  }
+
+  async function incluir(novoLivro: Omit<Livro, 'id'>): Promise<void> {
+    try {
+      await apiInserirLivro(novoLivro);
+      await recarregarAcervo();
+    } catch (erro: unknown) {
+      if (erro instanceof Error) throw new Error(erro.message);
+      throw new Error('Erro ao incluir livro.');
+    }
+  }
+
+  async function cadastrarLeitor(novoLeitor: { nome: string; matricula: string; telefone?: string; email?: string }): Promise<void> {
+    try {
+      await apiCadastrarLeitor(novoLeitor);
+      await recarregarAcervo();
+    } catch (erro: unknown) {
+      if (erro instanceof Error) throw new Error(erro.message);
+      throw new Error('Erro ao cadastrar leitor (verifique se a matrícula já existe).');
+    }
+  }
+
+  async function atualizarAutor(idLivro: number, novoAutor: string): Promise<void> {
+    try {
+      await apiAtualizarAutor(idLivro, novoAutor);
+      await recarregarAcervo();
+    } catch (erro: unknown) {
+      if (erro instanceof Error) throw new Error(erro.message);
+      throw new Error('Erro ao atualizar autor do livro.');
+    }
+  }
+
+  async function buscarPorTermo(termo: string): Promise<Livro[]> {
+    try {
+      return await apiBuscarLivros(termo);
+    } catch (erro: unknown) {
+      console.error(erro);
+      return [];
+    }
+  }
+
+  return (
+    <AcervoContexto.Provider 
+      value={{ 
+        estado, 
+        recarregarAcervo, 
+        emprestarLivro, 
+        devolverLivro, 
+        buscar, 
+        incluir,
+        cadastrarLeitor,
+        atualizarAutor,
+        buscarPorTermo
+      }}
+    >
+      {children}
+    </AcervoContexto.Provider>
+  );
 }
 
-export function useAcervo(): ValorDoAcervo {
-  const valor = useContext(AcervoContexto);
-  if (valor === undefined) {
-    throw new Error('useAcervo só funciona dentro de AcervoProvedor');
-  }
-  return valor;
+export function useAcervo(): AcervoContextoData {
+  return useContext(AcervoContexto);
 }
