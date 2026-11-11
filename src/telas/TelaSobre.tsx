@@ -33,7 +33,7 @@ export function TelaSobre() {
   return (
     <View style={estilos.tela}>
       <Text style={estilos.titulo}>Biblioteca</Text>
-      <Text>Aplicativo de biblioteca: acervo de livros com lista, cadastro e detalhe.</Text>
+      <Text style={estilos.descricao}>Aplicativo de biblioteca: acervo de livros com lista, cadastro e detalhe.</Text>
       <Text style={estilos.medida}>Janela: {Math.round(width)} x {Math.round(height)} dp</Text>
       <Text style={estilos.medida}>Densidade: {PixelRatio.get()}x</Text>
       <Text style={estilos.medida}>Escala da fonte: {fontScale}</Text>
@@ -43,7 +43,8 @@ export function TelaSobre() {
 }
 
 const estilos = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: cores.fundo, padding: espacos.md },
-  titulo: { fontSize: 24, fontWeight: 'bold', marginBottom: espacos.md, color: cores.texto },
+  tela:   { flex: 1, backgroundColor: cores.fundo, padding: espacos.md },
+  titulo: { fontSize: 24, marginBottom: espacos.md, color: cores.texto },
+  descricao: { fontSize: 16, color: cores.destaque },
   medida: { marginTop: espacos.sm, color: cores.textoSecundario },
 });
