@@ -42,25 +42,20 @@ export async function inicializarTabelasExtras(): Promise<void> {
   
   try {
     await db.execAsync(`ALTER TABLE leitores ADD COLUMN telefone TEXT;`);
-  } catch (erro: unknown) {
-    if (erro instanceof Error) {
-        // Ignora silenciosamente se a coluna já existir
-    }
+  } catch {
   }
 
   try {
     await db.execAsync(`ALTER TABLE leitores ADD COLUMN email TEXT;`);
-  } catch (erro: unknown) {
-    if (erro instanceof Error) {
-      // Ignora silenciosamente se a coluna já existir
-    }
+  } catch {
   }
 
   
   const leitorPadrao = await db.getFirstAsync<{ id: number }>('SELECT id FROM leitores WHERE id = 1;');
   if (!leitorPadrao) {
     await db.runAsync(
-      'INSERT OR IGNORE INTO leitores (id, nome, matricula, telefone, email) VALUES (1, "Leitor Padrão", "000000", "(00) 00000-0000", "padrao@biblioteca.com");'
+      'INSERT OR IGNORE INTO leitores (id, nome, matricula, telefone, email) VALUES (1, ?, ?, ?, ?);',
+      ['Leitor Padrão', '000000', '(00) 00000-0000', 'padrao@biblioteca.com']
     );
   }
 }
@@ -168,6 +163,24 @@ export async function devolverEmprestimoPorLivro(idLivro: number): Promise<void>
       'UPDATE livros SET exemplares = exemplares + 1 WHERE id = ?;',
       [idLivro]
     );
+  });
+}
+
+export async function excluirLivro(idLivro: number): Promise<void> {
+  const db = await abrirBancoDados();
+
+  const emprestimoAtivo = await db.getFirstAsync<EmprestimoBD>(
+    'SELECT * FROM emprestimos WHERE id_livro = ? AND data_devolucao_real IS NULL;',
+    [idLivro]
+  );
+
+  if (emprestimoAtivo) {
+    throw new Error('Não é possível excluir este livro pois ele possui empréstimos ativos pendentes de devolução.');
+  }
+
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM emprestimos WHERE id_livro = ?;', [idLivro]);
+    await db.runAsync('DELETE FROM livros WHERE id = ?;', [idLivro]);
   });
 }
 
