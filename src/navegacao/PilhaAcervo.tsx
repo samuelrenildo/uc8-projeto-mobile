@@ -14,7 +14,7 @@ export function PilhaAcervo() {
         headerTintColor: '#F5ECD7',
       }}
     >
-      <Pilha.Screen name="Acervo" component={TelaAcervo} options={{ headerShown: false }} />
+      <Pilha.Screen name="Acervo" component={TelaAcervo} options={{ title: 'Acervo' }} />
       <Pilha.Screen name="DetalheLivro" component={TelaDetalhesLivro} options={{ title: 'Detalhe do Livro' }} />
       <Pilha.Screen name="TelaNovoLivro" component={TelaNovoLivro} options={{ title: 'Novo Livro' }} />
     </Pilha.Navigator>
