@@ -18,4 +18,4 @@ Legenda do resultado: **aprovado** (o observado é o esperado), **falha** (não 
 | C10 | Contagem na tela Sobre | Aba Sobre depois de uma carga com rede | `Guardados no aparelho: N`, com N igual ao tamanho da lista | aprovado | aparelho, 08/11/2026 | - |
 | C11 | Banco indisponível | Banco que não abre (simulado com o SQL de criação quebrado) | Lista da nuvem continua; Sobre mostra `indisponível`; registros `[...] banco:` no console | não executado | - | - |
 | C12 | Voltar da pilha | Detalhe; botão de voltar do aparelho | Lista no mesmo estado, sem recarga | aprovado | aparelho, 08/11/2026 | - |
-| C13 | Rotação da tela | Lista em pé e deitada | Uma coluna em pé, duas deitada (tela larga) | falha | aparelho, 08/11/2026 | O aplicativo não gira para a horizontal no aparelho (orientação travada em retrato) |
+| C13 | Rotação da tela | Lista em pé e deitada | Uma coluna em pé, duas deitada (tela larga) | corrigido | aparelho, 08/11/2026 (falha); aparelho, 11/11/2026 (aprovado) | `orientation` de `portrait` para `default` no `app.json` |
