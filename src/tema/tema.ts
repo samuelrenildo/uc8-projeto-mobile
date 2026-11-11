@@ -1,13 +1,17 @@
 export const cores = {
-    fundo: '#F6F8FA',
-    superficie: '#FFFFFF',
-    primario: '#004A8D',
-    texto: '#1F2933',
-    textoSecundario: '#5B6B7C',
-    textoClaro: '#FFFFFF',
-    borda: '#D0D7DE',
-    alerta: '#F7941D',
-    erro: '#B42318',
+    fundo: '#2B1D14',
+    fundoEscuro: '#1A110B',
+    superficie: '#3A281C',
+    borda: '#5A4030',
+    primario: '#7B1E1E',
+    destaque: '#D4AF37',
+    texto: '#F5ECD7',
+    textoSecundario: '#C8B596',
+    textoApagado: '#9C8670',
+    textoClaro: '#F5ECD7',
+    sucesso: '#2E6B3F',
+    alerta: '#9A6B12',
+    erro: '#D9534F',
 };
 
 export const espacos = {
