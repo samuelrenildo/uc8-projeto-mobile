@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Botao } from '../componentes/Botao';
 import { useAcervo } from '../contexto/AcervoContexto';
 import type { RotasDaPilha } from '../navegacao/tipos';
+import { registrarErro } from '../erros/erros';
 
 type TelaNovoLivroProps = NativeStackScreenProps<RotasDaPilha, 'TelaNovoLivro'>;
 
@@ -39,6 +40,7 @@ export function TelaNovoLivro({ navigation }: TelaNovoLivroProps) {
       Alert.alert('Sucesso', 'Livro cadastrado com sucesso!');
       navigation.goBack();
     } catch (erro: unknown) {
+      registrarErro('cadastro', erro);
       const mensagem = erro instanceof Error ? erro.message : 'Erro ao cadastrar livro.';
       Alert.alert('Erro', mensagem);
     } finally {
@@ -54,7 +56,7 @@ export function TelaNovoLivro({ navigation }: TelaNovoLivroProps) {
       <TextInput
         style={estilos.input}
         placeholder="Ex: O Príncipe"
-        placeholderTextColor="#64748B"
+        placeholderTextColor="#9C8670"
         value={titulo}
         onChangeText={setTitulo}
       />
@@ -63,7 +65,7 @@ export function TelaNovoLivro({ navigation }: TelaNovoLivroProps) {
       <TextInput
         style={estilos.input}
         placeholder="Ex: Niccolò Machiavelli"
-        placeholderTextColor="#64748B"
+        placeholderTextColor="#9C8670"
         value={autor}
         onChangeText={setAutor}
       />
@@ -72,7 +74,7 @@ export function TelaNovoLivro({ navigation }: TelaNovoLivroProps) {
       <TextInput
         style={estilos.input}
         placeholder="Ex: 978-3-16-148410-0"
-        placeholderTextColor="#64748B"
+        placeholderTextColor="#9C8670"
         value={isbn}
         onChangeText={setIsbn}
       />
@@ -81,7 +83,7 @@ export function TelaNovoLivro({ navigation }: TelaNovoLivroProps) {
       <TextInput
         style={estilos.input}
         placeholder="1"
-        placeholderTextColor="#64748B"
+        placeholderTextColor="#9C8670"
         keyboardType="numeric"
         value={exemplares}
         onChangeText={setExemplares}
@@ -95,17 +97,17 @@ export function TelaNovoLivro({ navigation }: TelaNovoLivroProps) {
 }
 
 const estilos = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: '#13182C', padding: 16 },
-  tituloPagina: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, color: '#FFFFFF' },
-  rotulo: { color: '#94A3B8', marginBottom: 6, fontSize: 14, fontWeight: '600' },
+  tela: { flex: 1, backgroundColor: '#2B1D14', padding: 16 },
+  tituloPagina: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, color: '#F5ECD7' },
+  rotulo: { color: '#C8B596', marginBottom: 6, fontSize: 14, fontWeight: '600' },
   input: {
-    backgroundColor: '#1E2538',
-    color: '#FFFFFF',
+    backgroundColor: '#3A281C',
+    color: '#F5ECD7',
     paddingHorizontal: 16,
     height: 48,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#2A3456',
+    borderColor: '#5A4030',
     marginBottom: 16,
     fontSize: 15,
   },
