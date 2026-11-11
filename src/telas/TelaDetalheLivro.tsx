@@ -92,7 +92,7 @@ export function TelaDetalhesLivro() {
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.card}>
         <Ionicons name="book" size={36} color={cores.destaque} style={styles.icone} />
-        <Text style={styles.label}>ID do Registo: {idLivro ?? 'N/A'}</Text>
+        <Text style={styles.label}>ID do Registro: {idLivro ?? 'N/A'}</Text>
         <Text style={styles.title}>{titulo}</Text>
         <Text style={styles.author}>Autor: {autor || 'Autor não informado'}</Text>
         {livro?.exemplares !== undefined && (
