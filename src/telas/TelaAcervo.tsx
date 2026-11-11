@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAcervo } from '../contexto/AcervoContexto';
 import type { Livro } from '../contexto/AcervoContexto';
 import type { RotasDaPilha } from '../navegacao/tipos';
+import { registrarErro } from '../erros/erros';
 
 type TelaAcervoProps = NativeStackScreenProps<RotasDaPilha, 'Acervo'>;
 
@@ -31,10 +32,10 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
   const handleEmprestar = async (idLivro: number): Promise<void> => {
     try {
       setProcessandoId(idLivro);
-      // Por defeito, usamos o leitor com ID 1 para agilizar o empréstimo rápido
       await emprestarLivro(idLivro, 1);
       Alert.alert('Sucesso', 'Empréstimo realizado com sucesso!');
     } catch (erro: unknown) {
+      registrarErro('emprestimo', erro);
       const mensagem = erro instanceof Error ? erro.message : 'Erro ao emprestar livro.';
       Alert.alert('Aviso', mensagem);
     } finally {
@@ -48,6 +49,7 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
       await devolverLivro(idLivro);
       Alert.alert('Sucesso', 'Livro devolvido com sucesso!');
     } catch (erro: unknown) {
+      registrarErro('devolucao', erro);
       const mensagem = erro instanceof Error ? erro.message : 'Erro ao devolver livro.';
       Alert.alert('Aviso', mensagem);
     } finally {
@@ -63,7 +65,7 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
           style={estilos.botaoNovo}
           onPress={() => navigation.navigate('TelaNovoLivro')}
         >
-          <Ionicons name="add" size={20} color="#FFFFFF" />
+          <Ionicons name="add" size={20} color="#F5ECD7" />
           <Text style={estilos.textoBotaoNovo}>Novo Livro</Text>
         </TouchableOpacity>
       </View>
@@ -110,37 +112,37 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
 }
 
 const estilos = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: '#13182C', padding: 16 },
-  centralizado: { flex: 1, backgroundColor: '#13182C', justifyContent: 'center', alignItems: 'center' },
+  tela: { flex: 1, backgroundColor: '#2B1D14', padding: 16 },
+  centralizado: { flex: 1, backgroundColor: '#2B1D14', justifyContent: 'center', alignItems: 'center' },
   cabecalhoLista: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  tituloPagina: { fontSize: 20, fontWeight: 'bold', color: '#FFFFFF' },
+  tituloPagina: { fontSize: 20, fontWeight: 'bold', color: '#F5ECD7' },
   botaoNovo: { 
     flexDirection: 'row', 
-    backgroundColor: '#3B82F6', 
+    backgroundColor: '#7B1E1E', 
     paddingHorizontal: 12, 
     paddingVertical: 8, 
     borderRadius: 8, 
     alignItems: 'center',
     gap: 4 
   },
-  textoBotaoNovo: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  textoBotaoNovo: { color: '#F5ECD7', fontWeight: 'bold', fontSize: 14 },
   cartao: {
-    backgroundColor: '#1E2538',
+    backgroundColor: '#3A281C',
     padding: 16,
     borderRadius: 8,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2A3456',
+    borderColor: '#5A4030',
   },
-  tituloLivro: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },
-  autorLivro: { color: '#94A3B8', marginVertical: 4 },
-  exemplares: { fontSize: 14, color: '#3B82F6', fontWeight: 'bold', marginBottom: 12 },
-  containerBotoesAcao: { flexDirection: 'row', gap: 8, borderTopWidth: 1, borderTopColor: '#2A3456', paddingTop: 12 },
+  tituloLivro: { fontSize: 16, fontWeight: 'bold', color: '#F5ECD7' },
+  autorLivro: { color: '#C8B596', marginVertical: 4 },
+  exemplares: { fontSize: 14, color: '#D4AF37', fontWeight: 'bold', marginBottom: 12 },
+  containerBotoesAcao: { flexDirection: 'row', gap: 8, borderTopWidth: 1, borderTopColor: '#5A4030', paddingTop: 12 },
   botaoAcao: { flex: 1, paddingVertical: 8, borderRadius: 6, alignItems: 'center' },
-  botaoEmprestar: { backgroundColor: '#10B981' },
-  botaoDevolver: { backgroundColor: '#F59E0B' },
-  textoBotaoAcao: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 12 },
-  vazio: { color: '#94A3B8', marginTop: 32, textAlign: 'center' },
-  textoCarregando: { color: '#FFFFFF', fontSize: 16 },
-  textoErro: { color: '#EF4444', fontSize: 16 },
+  botaoEmprestar: { backgroundColor: '#2E6B3F' },
+  botaoDevolver: { backgroundColor: '#9A6B12' },
+  textoBotaoAcao: { color: '#F5ECD7', fontWeight: 'bold', fontSize: 12 },
+  vazio: { color: '#C8B596', marginTop: 32, textAlign: 'center' },
+  textoCarregando: { color: '#F5ECD7', fontSize: 16 },
+  textoErro: { color: '#D9534F', fontSize: 16 },
 });
