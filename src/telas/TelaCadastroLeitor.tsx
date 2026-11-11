@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ScrollView,
 import { Ionicons } from '@expo/vector-icons';
 import { useAcervo } from '../contexto/AcervoContexto';
 import { listarLeitores, cadastrarLeitor, excluirLeitor, type LeitorBD } from '../data/bibliotecaService';
+import { registrarErro } from '../erros/erros';
 
 export function TelaCadastroLeitor() {
   const { recarregarAcervo } = useAcervo();
@@ -17,7 +18,8 @@ export function TelaCadastroLeitor() {
     try {
       const dados = await listarLeitores();
       setLeitores(dados);
-    } catch {
+    } catch (erro: unknown) {
+      registrarErro('lista de leitores', erro);
       Alert.alert('Erro', 'Não foi possível carregar a lista de leitores.');
     }
   }, []);
@@ -49,6 +51,7 @@ export function TelaCadastroLeitor() {
       await carregarLeitores();
       await recarregarAcervo();
     } catch (erro: unknown) {
+      registrarErro('cadastro de leitor', erro);
       const mensagem = erro instanceof Error ? erro.message : 'Erro ao cadastrar leitor.';
       Alert.alert('Erro', mensagem);
     } finally {
@@ -71,8 +74,9 @@ export function TelaCadastroLeitor() {
               Alert.alert('Sucesso', 'Leitor excluído com sucesso!');
               await carregarLeitores();
             } catch (erro: unknown) {
+              registrarErro('exclusao de leitor', erro);
               const mensagem = erro instanceof Error ? erro.message : 'Erro ao excluir leitor.';
-              Alert.alert('Aviso', mensagem); // Aqui aparece o aviso se ele tiver empréstimos ativos!
+              Alert.alert('Aviso', mensagem);
             }
           },
         },
@@ -89,7 +93,7 @@ export function TelaCadastroLeitor() {
         <TextInput
           style={estilos.input}
           placeholder="Ex: Ana Silva"
-          placeholderTextColor="#64748B"
+          placeholderTextColor="#9C8670"
           value={nome}
           onChangeText={setNome}
         />
@@ -100,7 +104,7 @@ export function TelaCadastroLeitor() {
         <TextInput
           style={estilos.input}
           placeholder="Ex: 2026001"
-          placeholderTextColor="#64748B"
+          placeholderTextColor="#9C8670"
           value={matricula}
           onChangeText={setMatricula}
         />
@@ -111,7 +115,7 @@ export function TelaCadastroLeitor() {
         <TextInput
           style={estilos.input}
           placeholder="Ex: (84) 99999-9999"
-          placeholderTextColor="#64748B"
+          placeholderTextColor="#9C8670"
           value={telefone}
           onChangeText={setTelefone}
           keyboardType="phone-pad"
@@ -123,7 +127,7 @@ export function TelaCadastroLeitor() {
         <TextInput
           style={estilos.input}
           placeholder="Ex: ana@email.com"
-          placeholderTextColor="#64748B"
+          placeholderTextColor="#9C8670"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -156,7 +160,7 @@ export function TelaCadastroLeitor() {
             style={estilos.botaoExcluir}
             onPress={() => handleExcluir(item.id)}
           >
-            <Ionicons name="trash-outline" size={20} color="#EF4444" />
+            <Ionicons name="trash-outline" size={20} color="#D9534F" />
           </TouchableOpacity>
         </View>
       ))}
@@ -165,42 +169,42 @@ export function TelaCadastroLeitor() {
 }
 
 const estilos = StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: '#13182C', padding: 16 },
-  titulo: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 20, textAlign: 'center' },
+  container: { flexGrow: 1, backgroundColor: '#2B1D14', padding: 16 },
+  titulo: { fontSize: 22, fontWeight: 'bold', color: '#F5ECD7', marginBottom: 20, textAlign: 'center' },
   grupoInput: { marginBottom: 14 },
-  rotulo: { color: '#94A3B8', fontSize: 14, marginBottom: 6, fontWeight: '600' },
+  rotulo: { color: '#C8B596', fontSize: 14, marginBottom: 6, fontWeight: '600' },
   input: {
-    backgroundColor: '#1E2538',
+    backgroundColor: '#3A281C',
     borderWidth: 1,
-    borderColor: '#2A3456',
+    borderColor: '#5A4030',
     borderRadius: 8,
     padding: 12,
-    color: '#FFFFFF',
+    color: '#F5ECD7',
     fontSize: 16,
   },
   botao: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#7B1E1E',
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 8,
   },
   botaoDesativado: { opacity: 0.7 },
-  textoBotao: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
-  divisor: { height: 1, backgroundColor: '#2A3456', marginVertical: 24 },
-  subtitulo: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 12 },
+  textoBotao: { color: '#F5ECD7', fontWeight: 'bold', fontSize: 16 },
+  divisor: { height: 1, backgroundColor: '#5A4030', marginVertical: 24 },
+  subtitulo: { fontSize: 18, fontWeight: 'bold', color: '#F5ECD7', marginBottom: 12 },
   cartaoLeitor: {
-    backgroundColor: '#1E2538',
+    backgroundColor: '#3A281C',
     padding: 14,
     borderRadius: 8,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#2A3456',
+    borderColor: '#5A4030',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  nomeLeitor: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 4 },
-  infoLeitor: { color: '#94A3B8', fontSize: 13, marginBottom: 2 },
+  nomeLeitor: { fontSize: 16, fontWeight: 'bold', color: '#F5ECD7', marginBottom: 4 },
+  infoLeitor: { color: '#C8B596', fontSize: 13, marginBottom: 2 },
   botaoExcluir: { padding: 8 },
 });
