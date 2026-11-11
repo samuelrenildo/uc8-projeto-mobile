@@ -25,7 +25,7 @@ export function TelaBusca() {
       <TextInput
         style={estilos.input}
         placeholder="Digite o título ou autor..."
-        placeholderTextColor="#64748B"
+        placeholderTextColor="#9C8670"
         value={termo}
         onChangeText={handleBuscar}
       />
@@ -53,29 +53,29 @@ export function TelaBusca() {
 }
 
 const estilos = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: '#13182C', padding: 16 },
-  tituloPagina: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: '#FFFFFF' },
+  tela: { flex: 1, backgroundColor: '#2B1D14', padding: 16 },
+  tituloPagina: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: '#F5ECD7' },
   input: {
-    backgroundColor: '#1E2538',
-    color: '#FFFFFF',
+    backgroundColor: '#3A281C',
+    color: '#F5ECD7',
     paddingHorizontal: 16,
     height: 48,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#2A3456',
+    borderColor: '#5A4030',
     marginBottom: 16,
     fontSize: 15,
   },
   cartao: {
-    backgroundColor: '#1E2538',
+    backgroundColor: '#3A281C',
     padding: 16,
     borderRadius: 8,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2A3456',
+    borderColor: '#5A4030',
   },
-  tituloLivro: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },
-  autorLivro: { color: '#94A3B8', marginBottom: 4 },
-  exemplares: { fontSize: 14, color: '#3B82F6', fontWeight: 'bold' },
-  vazio: { color: '#94A3B8', marginTop: 24, textAlign: 'center' },
+  tituloLivro: { fontSize: 16, fontWeight: 'bold', color: '#F5ECD7' },
+  autorLivro: { color: '#C8B596', marginBottom: 4 },
+  exemplares: { fontSize: 14, color: '#D4AF37', fontWeight: 'bold' },
+  vazio: { color: '#C8B596', marginTop: 24, textAlign: 'center' },
 });
