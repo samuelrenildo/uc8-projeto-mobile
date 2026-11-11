@@ -20,8 +20,6 @@ export function TelaBusca() {
 
   return (
     <View style={estilos.tela}>
-      <Text style={estilos.tituloPagina}>Pesquisar Livros</Text>
-
       <TextInput
         style={estilos.input}
         placeholder="Digite o título ou autor..."
@@ -54,7 +52,6 @@ export function TelaBusca() {
 
 const estilos = StyleSheet.create({
   tela: { flex: 1, backgroundColor: '#2B1D14', padding: 16 },
-  tituloPagina: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: '#F5ECD7' },
   input: {
     backgroundColor: '#3A281C',
     color: '#F5ECD7',
