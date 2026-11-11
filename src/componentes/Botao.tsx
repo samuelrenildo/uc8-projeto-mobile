@@ -30,7 +30,7 @@ export function Botao({
       activeOpacity={0.7}
     >
       {carregando ? (
-        <ActivityIndicator color={ehSecundario ? '#3B82F6' : '#FFFFFF'} />
+        <ActivityIndicator color={ehSecundario ? '#D4AF37' : '#F5ECD7'} />
       ) : (
         <Text
           style={[
@@ -55,16 +55,16 @@ const estilos = StyleSheet.create({
     paddingHorizontal: 12,
   },
   botaoPrimario: {
-    backgroundColor: '#1D4ED8',
+    backgroundColor: '#7B1E1E',
   },
   botaoSecundario: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#3B82F6',
+    borderColor: '#D4AF37',
   },
   botaoDesabilitado: {
-    backgroundColor: '#1E293B',
-    borderColor: '#334155',
+    backgroundColor: '#3A281C',
+    borderColor: '#5A4030',
     opacity: 0.6,
   },
   textoBotao: {
@@ -72,12 +72,12 @@ const estilos = StyleSheet.create({
     fontWeight: '600',
   },
   textoPrimario: {
-    color: '#FFFFFF',
+    color: '#F5ECD7',
   },
   textoSecundario: {
-    color: '#3B82F6',
+    color: '#D4AF37',
   },
   textoDesabilitado: {
-    color: '#64748B',
+    color: '#9C8670',
   },
 });
