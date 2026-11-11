@@ -10,8 +10,8 @@ export function PilhaAcervo() {
   return (
     <Pilha.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#13182C' },
-        headerTintColor: '#FFFFFF',
+        headerStyle: { backgroundColor: '#2B1D14' },
+        headerTintColor: '#F5ECD7',
       }}
     >
       <Pilha.Screen name="Acervo" component={TelaAcervo} options={{ headerShown: false }} />
