@@ -1,13 +1,27 @@
 import * as SQLite from 'expo-sqlite';
 
-export async function abrirBancoDados() {
-  const db = await SQLite.openDatabaseAsync('biblioteca.db');
-  return db;
+let bancoAberto: Promise<SQLite.SQLiteDatabase> | undefined;
+
+export function abrirBancoDados(): Promise<SQLite.SQLiteDatabase> {
+  if (bancoAberto === undefined) {
+    bancoAberto = SQLite.openDatabaseAsync('biblioteca.db').catch((erro: unknown) => {
+      bancoAberto = undefined;
+      throw erro;
+    });
+  }
+  return bancoAberto;
 }
 
-export async function inicializarBanco() {
+async function garantirColuna(db: SQLite.SQLiteDatabase, tabela: string, coluna: string, definicao: string): Promise<void> {
+  const colunas = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${tabela});`);
+  if (!colunas.some((c) => c.name === coluna)) {
+    await db.execAsync(`ALTER TABLE ${tabela} ADD COLUMN ${coluna} ${definicao};`);
+  }
+}
+
+export async function inicializarBanco(): Promise<void> {
   const db = await abrirBancoDados();
-  
+
   await db.execAsync(`
     PRAGMA foreign_keys = ON;
 
@@ -15,7 +29,8 @@ export async function inicializarBanco() {
       id integer primary key autoincrement,
       nome text not null,
       matricula text unique not null,
-      telefone text
+      telefone text,
+      email text
     );
 
     create table if not exists autores (
@@ -26,8 +41,8 @@ export async function inicializarBanco() {
     create table if not exists livros (
       id integer primary key autoincrement,
       titulo text not null,
-      autor text not null,
-      isbn text unique,
+      autor text,
+      isbn text,
       exemplares integer default 1,
       id_autor integer,
       foreign key (id_autor) references autores(id)
@@ -43,6 +58,10 @@ export async function inicializarBanco() {
       foreign key (id_leitor) references leitores(id)
     );
   `);
-  
-  console.log('Base de dados e tabelas inicializadas com sucesso.');
+
+  await garantirColuna(db, 'leitores', 'matricula', 'text');
+  await garantirColuna(db, 'leitores', 'telefone', 'text');
+  await garantirColuna(db, 'leitores', 'email', 'text');
+  await garantirColuna(db, 'livros', 'isbn', 'text');
+  await garantirColuna(db, 'livros', 'exemplares', 'integer default 1');
 }
