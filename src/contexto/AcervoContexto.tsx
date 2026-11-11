@@ -1,140 +1,149 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { 
-  listarLivros, 
-  emprestarLivro as apiEmprestar, 
-  devolverEmprestimoPorLivro as apiDevolver,
-  inserirLivro as apiInserirLivro,
-  cadastrarLeitor as apiCadastrarLeitor,
-  listarLeitores as apiListarLeitores,
-  atualizarAutorLivro as apiAtualizarAutor,
-  buscarLivrosPorTermo as apiBuscarLivros,
-  inicializarTabelasExtras,
-  LeitorBD,
-  LivroBD
-} from '../data/bibliotecaService';
+import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { listarLivros as obterLivros, emprestarLivro as servicoEmprestar, devolverEmprestimoPorLivro as servicoDevolver, inserirLivro as servicoInserirLivro, atualizarAutorLivro as servicoAtualizarAutor, excluirLivro as servicoExcluirLivro, inicializarTabelasExtras, type LivroBD } from '../data/bibliotecaService';
 import { inicializarBanco } from '../data/database';
+import { ErroDeValidacao, registrarErro } from '../erros/erros';
 
 export type Livro = LivroBD;
-export type Leitor = LeitorBD;
 
-type EstadoAcervo = 
-  | { tipo: 'carregando' }
-  | { tipo: 'pronto'; livros: Livro[]; leitores: Leitor[] }
-  | { tipo: 'erro'; mensagem: string };
-
-interface AcervoContextoData {
-  estado: EstadoAcervo;
-  recarregarAcervo: () => Promise<void>;
-  emprestarLivro: (idLivro: number, idLeitor: number) => Promise<void>;
-  devolverLivro: (idLivro: number) => Promise<void>;
-  buscar: (id: number) => Promise<Livro | null>;
-  incluir: (novoLivro: Omit<Livro, 'id'>) => Promise<void>;
-  cadastrarLeitor: (novoLeitor: { nome: string; matricula: string; telefone?: string; email?: string }) => Promise<void>;
-  atualizarAutor: (idLivro: number, novoAutor: string) => Promise<void>;
-  buscarPorTermo: (termo: string) => Promise<Livro[]>;
+interface EstadoAcervo {
+  tipo: 'carregando' | 'sucesso' | 'erro';
+  mensagem?: string;
+  livros: LivroBD[];
 }
 
-const AcervoContexto = createContext<AcervoContextoData>({} as AcervoContextoData);
+interface AcervoContextData {
+  livros: LivroBD[];
+  estado: EstadoAcervo;
+  recarregarAcervo: () => Promise<void>;
+  buscarPorTermo: (termo: string) => Promise<LivroBD[]>;
+  emprestarLivro: (idLivro: number, quantidade?: number) => Promise<void>;
+  devolverLivro: (idLivro: number) => Promise<void>;
+  atualizarAutor: (idLivro: number, novoAutor: string) => Promise<void>;
+  excluirLivro: (idLivro: number) => Promise<void>;
+  incluir: (
+    dados: { titulo: string; autor: string; isbn?: string; exemplares: number } | string, 
+    autor?: string, 
+    isbn?: string, 
+    exemplares?: number
+  ) => Promise<void>;
+}
 
-export function AcervoProvedor({ children }: { children: ReactNode }) {
-  const [estado, setEstado] = useState<EstadoAcervo>({ tipo: 'carregando' });
 
-  async function recarregarAcervo(): Promise<void> {
+const AcervoContexto = createContext<AcervoContextData>({} as AcervoContextData);
+
+interface AcervoProviderProps {
+  children: ReactNode;
+}
+
+export function AcervoProvider({ children }: AcervoProviderProps) {
+  const [livros, setLivros] = useState<LivroBD[]>([]);
+  const [estado, setEstado] = useState<EstadoAcervo>({
+    tipo: 'carregando',
+    livros: [],
+  });
+
+  const recarregarAcervo = useCallback(async (): Promise<void> => {
     try {
-      await inicializarBanco();
-      await inicializarTabelasExtras();
-      const livros = await listarLivros();
-      const leitores = await apiListarLeitores();
-      setEstado({ tipo: 'pronto', livros, leitores });
+      setEstado((antigo) => ({ ...antigo, tipo: 'carregando' }));
+      const dados = await obterLivros();
+      const lista = dados ?? [];
+      setLivros(lista);
+      setEstado({ tipo: 'sucesso', livros: lista });
     } catch (erro: unknown) {
-      console.error(erro);
-      setEstado({ tipo: 'erro', mensagem: 'Erro ao carregar os dados do sistema.' });
+      const mensagem = registrarErro('carga', erro).mensagem;
+      setEstado({ tipo: 'erro', mensagem, livros: [] });
     }
-  }
-
-  useEffect(() => {
-    recarregarAcervo();
   }, []);
 
-  async function emprestarLivro(idLivro: number, idLeitor: number): Promise<void> {
-    try {
-      await apiEmprestar(idLivro, idLeitor);
+  useEffect(() => {
+    (async () => {
+      try {
+        await inicializarBanco();
+        await inicializarTabelasExtras();
+      } catch (erro: unknown) {
+        const mensagem = registrarErro('inicializacao do banco', erro).mensagem;
+        setEstado({ tipo: 'erro', mensagem, livros: [] });
+        return;
+      }
       await recarregarAcervo();
-    } catch (erro: unknown) {
-      if (erro instanceof Error) throw new Error(erro.message);
-      throw new Error('Erro ao realizar empréstimo.');
-    }
-  }
+    })();
+  }, [recarregarAcervo]);
 
-  async function devolverLivro(idLivro: number): Promise<void> {
+  const buscarPorTermo = async (termo: string): Promise<LivroBD[]> => {
+    const termoTratado = termo.trim().toLowerCase();
+    if (!termoTratado) return livros;
+
     try {
-      await apiDevolver(idLivro);
-      await recarregarAcervo();
+      const todosLivros = await obterLivros();
+      return (todosLivros ?? []).filter(
+        (livro: LivroBD) =>
+          livro.titulo.toLowerCase().includes(termoTratado) ||
+          (livro.autor && livro.autor.toLowerCase().includes(termoTratado))
+      );
     } catch (erro: unknown) {
-      if (erro instanceof Error) throw new Error(erro.message);
-      throw new Error('Erro ao realizar devolução.');
-    }
-  }
-
-  async function buscar(id: number): Promise<Livro | null> {
-    if (estado.tipo === 'pronto') {
-      const encontrado = estado.livros.find((l: Livro) => l.id === id);
-      if (encontrado) return encontrado;
-    }
-    return null;
-  }
-
-  async function incluir(novoLivro: Omit<Livro, 'id'>): Promise<void> {
-    try {
-      await apiInserirLivro(novoLivro);
-      await recarregarAcervo();
-    } catch (erro: unknown) {
-      if (erro instanceof Error) throw new Error(erro.message);
-      throw new Error('Erro ao incluir livro.');
-    }
-  }
-
-  async function cadastrarLeitor(novoLeitor: { nome: string; matricula: string; telefone?: string; email?: string }): Promise<void> {
-    try {
-      await apiCadastrarLeitor(novoLeitor);
-      await recarregarAcervo();
-    } catch (erro: unknown) {
-      if (erro instanceof Error) throw new Error(erro.message);
-      throw new Error('Erro ao cadastrar leitor (verifique se a matrícula já existe).');
-    }
-  }
-
-  async function atualizarAutor(idLivro: number, novoAutor: string): Promise<void> {
-    try {
-      await apiAtualizarAutor(idLivro, novoAutor);
-      await recarregarAcervo();
-    } catch (erro: unknown) {
-      if (erro instanceof Error) throw new Error(erro.message);
-      throw new Error('Erro ao atualizar autor do livro.');
-    }
-  }
-
-  async function buscarPorTermo(termo: string): Promise<Livro[]> {
-    try {
-      return await apiBuscarLivros(termo);
-    } catch (erro: unknown) {
-      console.error(erro);
+      registrarErro('busca', erro);
       return [];
     }
-  }
+  };
+
+  const emprestarLivro = async (idLivro: number, quantidade = 1): Promise<void> => {
+    await servicoEmprestar(idLivro, quantidade);
+    await recarregarAcervo();
+  };
+
+  const devolverLivro = async (idLivro: number): Promise<void> => {
+    await servicoDevolver(idLivro);
+    await recarregarAcervo();
+  };
+
+  const atualizarAutor = async (idLivro: number, novoAutor: string): Promise<void> => {
+    const nome = novoAutor.trim();
+    if (!nome) {
+      throw new ErroDeValidacao('Informe o nome do autor.');
+    }
+    await servicoAtualizarAutor(idLivro, nome);
+    await recarregarAcervo();
+  };
+
+  const excluirLivro = async (idLivro: number): Promise<void> => {
+    await servicoExcluirLivro(idLivro);
+    await recarregarAcervo();
+  };
+
+  const incluir = async (
+    tituloOuObj: { titulo: string; autor: string; isbn?: string; exemplares: number } | string, 
+    autorStr?: string, 
+    isbnStr?: string, 
+    exemplaresNum?: number
+  ): Promise<void> => {
+    const dados =
+      typeof tituloOuObj === 'object' && tituloOuObj !== null
+        ? { titulo: tituloOuObj.titulo, autor: tituloOuObj.autor, isbn: tituloOuObj.isbn ?? '', exemplares: tituloOuObj.exemplares }
+        : { titulo: tituloOuObj, autor: autorStr ?? '', isbn: isbnStr ?? '', exemplares: exemplaresNum ?? 1 };
+
+    if (dados.titulo.trim() === '') {
+      throw new ErroDeValidacao('Informe o título.');
+    }
+    if (!Number.isInteger(dados.exemplares) || dados.exemplares < 0) {
+      throw new ErroDeValidacao('Exemplares precisa ser um número inteiro, zero ou maior.');
+    }
+
+    await servicoInserirLivro({ ...dados, titulo: dados.titulo.trim() });
+    await recarregarAcervo();
+  };
 
   return (
     <AcervoContexto.Provider 
       value={{ 
+        livros, 
         estado, 
         recarregarAcervo, 
+        buscarPorTermo, 
         emprestarLivro, 
-        devolverLivro, 
-        buscar, 
-        incluir,
-        cadastrarLeitor,
+        devolverLivro,
         atualizarAutor,
-        buscarPorTermo
+        excluirLivro,
+        incluir
       }}
     >
       {children}
@@ -142,6 +151,12 @@ export function AcervoProvedor({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAcervo(): AcervoContextoData {
-  return useContext(AcervoContexto);
+export function useAcervo(): AcervoContextData {
+  const contexto = useContext(AcervoContexto);
+  if (!contexto) {
+    throw new Error('useAcervo deve ser usado dentro de um AcervoProvider');
+  }
+  return contexto;
 }
+
+export const AcervoProvedor = AcervoProvider;
