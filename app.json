@@ -25,6 +25,12 @@
     "plugins": [
       "expo-sqlite",
       "expo-status-bar"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9e6a9659-372e-4fba-b66e-78234d9cbee6"
+      }
+    },
+    "owner": "tecnico-em-desenvolvimento-de-sistemas"
   }
 }
