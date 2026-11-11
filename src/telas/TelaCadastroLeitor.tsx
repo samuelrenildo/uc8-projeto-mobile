@@ -86,7 +86,7 @@ export function TelaCadastroLeitor() {
 
   return (
     <ScrollView contentContainerStyle={estilos.container}>
-      <Text style={estilos.titulo}>Registar Novo Leitor</Text>
+      <Text style={estilos.titulo}>Registrar Novo Leitor</Text>
 
       <View style={estilos.grupoInput}>
         <Text style={estilos.rotulo}>Nome Completo *</Text>
@@ -140,7 +140,7 @@ export function TelaCadastroLeitor() {
         onPress={handleCadastrar}
         disabled={carregando}
       >
-        <Text style={estilos.textoBotao}>{carregando ? 'A registar...' : 'Cadastrar Leitor'}</Text>
+        <Text style={estilos.textoBotao}>{carregando ? 'Registrando...' : 'Cadastrar Leitor'}</Text>
       </TouchableOpacity>
 
       <View style={estilos.divisor} />
