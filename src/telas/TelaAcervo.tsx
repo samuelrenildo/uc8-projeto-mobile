@@ -60,8 +60,7 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
   return (
     <View style={estilos.tela}>
       <View style={estilos.cabecalhoLista}>
-        <Text style={estilos.tituloPagina}>Livros no Acervo</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={estilos.botaoNovo}
           onPress={() => navigation.navigate('TelaNovoLivro')}
         >
@@ -114,8 +113,7 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
 const estilos = StyleSheet.create({
   tela: { flex: 1, backgroundColor: '#2B1D14', padding: 16 },
   centralizado: { flex: 1, backgroundColor: '#2B1D14', justifyContent: 'center', alignItems: 'center' },
-  cabecalhoLista: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  tituloPagina: { fontSize: 20, fontWeight: 'bold', color: '#F5ECD7' },
+  cabecalhoLista: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 16 },
   botaoNovo: { 
     flexDirection: 'row', 
     backgroundColor: '#7B1E1E', 
