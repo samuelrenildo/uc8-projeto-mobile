@@ -16,7 +16,7 @@ interface AcervoContextData {
   estado: EstadoAcervo;
   recarregarAcervo: () => Promise<void>;
   buscarPorTermo: (termo: string) => Promise<LivroBD[]>;
-  emprestarLivro: (idLivro: number, quantidade?: number) => Promise<void>;
+  emprestarLivro: (idLivro: number, idLeitor: number) => Promise<void>;
   devolverLivro: (idLivro: number) => Promise<void>;
   atualizarAutor: (idLivro: number, novoAutor: string) => Promise<void>;
   excluirLivro: (idLivro: number) => Promise<void>;
@@ -86,8 +86,8 @@ export function AcervoProvider({ children }: AcervoProviderProps) {
     }
   };
 
-  const emprestarLivro = async (idLivro: number, quantidade = 1): Promise<void> => {
-    await servicoEmprestar(idLivro, quantidade);
+  const emprestarLivro = async (idLivro: number, idLeitor: number): Promise<void> => {
+    await servicoEmprestar(idLivro, idLeitor);
     await recarregarAcervo();
   };
 
