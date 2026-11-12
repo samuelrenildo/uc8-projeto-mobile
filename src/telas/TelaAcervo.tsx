@@ -11,7 +11,7 @@ import { listarLeitores, type LeitorBD } from '../data/bibliotecaService';
 type TelaAcervoProps = NativeStackScreenProps<RotasDaPilha, 'Acervo'>;
 
 export function TelaAcervo({ navigation }: TelaAcervoProps) {
-  const { estado, emprestarLivro, devolverLivro } = useAcervo();
+  const { estado, emprestarLivro, devolverLivro, recarregarAcervo } = useAcervo();
   const [processandoId, setProcessandoId] = useState<number | null>(null);
   const [idLivroEmprestimo, setIdLivroEmprestimo] = useState<number | null>(null);
   const [leitores, setLeitores] = useState<LeitorBD[]>([]);
@@ -28,6 +28,9 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
     return (
       <View style={estilos.centralizado}>
         <Text style={estilos.textoErro}>{estado.mensagem}</Text>
+        <TouchableOpacity style={estilos.botaoSecundario} onPress={() => recarregarAcervo()}>
+          <Text style={estilos.textoBotaoSecundario}>Tentar de novo</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -87,6 +90,9 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
   return (
     <View style={estilos.tela}>
       <View style={estilos.cabecalhoLista}>
+        <TouchableOpacity style={estilos.botaoRecarregar} onPress={() => recarregarAcervo()}>
+          <Text style={estilos.textoBotaoSecundario}>Recarregar</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={estilos.botaoNovo}
           onPress={() => navigation.navigate('TelaNovoLivro')}
@@ -95,6 +101,15 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
           <Text style={estilos.textoBotaoNovo}>Novo Livro</Text>
         </TouchableOpacity>
       </View>
+
+      {estado.origem === 'aparelho' && (
+        <Text style={estilos.aviso}>Mostrando os livros guardados no aparelho: {estado.motivo}</Text>
+      )}
+      {estado.pendentes.length > 0 && (
+        <Text style={estilos.aviso}>
+          A enviar ({estado.pendentes.length}): {estado.pendentes.map((pendente) => pendente.titulo).join(', ')}
+        </Text>
+      )}
 
       <FlatList<Livro>
         data={estado.livros}
@@ -175,7 +190,11 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
 const estilos = StyleSheet.create({
   tela: { flex: 1, backgroundColor: '#2B1D14', padding: 16 },
   centralizado: { flex: 1, backgroundColor: '#2B1D14', justifyContent: 'center', alignItems: 'center' },
-  cabecalhoLista: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 16 },
+  cabecalhoLista: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 16 },
+  botaoRecarregar: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#D4AF37' },
+  botaoSecundario: { borderWidth: 1, borderColor: '#D4AF37', paddingHorizontal: 16, paddingVertical: 10, marginTop: 12 },
+  textoBotaoSecundario: { color: '#D4AF37', fontWeight: 'bold', fontSize: 14 },
+  aviso: { color: '#D4AF37', marginBottom: 12, fontSize: 13 },
   botaoNovo: {
     flexDirection: 'row',
     backgroundColor: '#7B1E1E',
