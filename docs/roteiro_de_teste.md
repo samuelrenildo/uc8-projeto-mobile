@@ -22,9 +22,9 @@ Legenda do resultado: **aprovado** (o observado é o esperado), **falha** (não 
 | C14 | Cadastro de leitor | Aba Novo Leitor; nome e matrícula preenchidos; Cadastrar Leitor | `Leitor cadastrado com sucesso!`; o leitor aparece em "Leitores Cadastrados" | aprovado | aparelho, 11/11/2026 | - |
 | C15 | Leitor sem dados obrigatórios | Aba Novo Leitor; nome vazio; Cadastrar Leitor | Aviso `Preencha pelo menos o Nome e a Matrícula do leitor.`; nada é gravado | aprovado | aparelho, 11/11/2026 | - |
 | C16 | Empréstimo | Acervo; Emprestar em um livro com exemplares; escolher leitor | `Empréstimo realizado com sucesso!`; exemplares diminuem em 1 | aprovado | aparelho, 11/11/2026 | - |
-| C17 | Empréstimo sem exemplares | Acervo; Emprestar em um livro com 0 exemplares | Aviso `Sem exemplares disponíveis para empréstimo.` | não executado | - | - |
-| C18 | Devolução | Acervo; Devolver em um livro emprestado | `Livro devolvido com sucesso!`; exemplares aumentam em 1 | não executado | - | - |
-| C19 | Busca | Aba Pesquisar Livros; digitar parte do título ou do autor | Só os livros que contêm o termo aparecem | não executado | - | - |
+| C17 | Empréstimo sem exemplares | Acervo; Emprestar em um livro com 0 exemplares | Aviso `Sem exemplares disponíveis para empréstimo.` | aprovado | aparelho, 11/11/2026 | - |
+| C18 | Devolução | Acervo; Devolver em um livro emprestado | `Livro devolvido com sucesso!`; exemplares aumentam em 1 | aprovado | aparelho, 11/11/2026 | - |
+| C19 | Busca | Aba Pesquisar Livros; digitar parte do título ou do autor | Só os livros que contêm o termo aparecem | aprovado | aparelho, 11/11/2026 | - |
 | C20 | Atualizar autor | Detalhe; Editar nome do autor; novo nome; Salvar | `Autor atualizado com sucesso!`; o novo nome aparece no detalhe e na lista | aprovado | aparelho, 11/11/2026 | - |
 | C21 | Autor vazio | Detalhe; Editar nome do autor; apagar o nome; Salvar | Aviso `Informe o nome do autor.`; o autor não muda | aprovado | aparelho, 11/11/2026 | - |
 | C22 | Excluir livro | Detalhe; Excluir livro; confirmar | `Livro excluído com sucesso!`; volta à lista sem o livro | aprovado | aparelho, 11/11/2026 | - |
