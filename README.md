@@ -37,6 +37,8 @@ EXPO_PUBLIC_SUPABASE_KEY=sb_publishable_evjlofwrewCed_5N0DkfdA_8GOaOOrx
 
 ## Instalação do APK
 
-Abra no celular Android o link abaixo (ou leia o QR code do painel do Expo) e instale o APK. Quando o Android pedir, permita a instalação de apps de fontes desconhecidas.
+Baixe o APK pelo link abaixo, abra o arquivo no celular Android e instale. Quando o Android pedir, permita a instalação de apps de fontes desconhecidas.
 
-https://expo.dev/accounts/tecnico-em-desenvolvimento-de-sistemas/projects/uc8-projeto-mobile/builds/e849194e-4174-49ee-b835-940e1234c917
+APK (download direto): https://expo.dev/artifacts/eas/_toCw63hSkvUFhvD6W2X83YbgEOEYktzsJltxInarGY.apk
+
+Página do build no Expo: https://expo.dev/accounts/tecnico-em-desenvolvimento-de-sistemas/projects/uc8-projeto-mobile/builds/e849194e-4174-49ee-b835-940e1234c917
