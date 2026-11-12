@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { PixelRatio, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { listarLivros } from '../data/bibliotecaService';
+import { listarLocal } from '../banco/banco';
+import { montarAcervo } from '../data/bibliotecaService';
 import { registrarErro } from '../erros/erros';
 import { cores, espacos } from '../tema/tema';
 
@@ -12,7 +13,8 @@ export function TelaSobre() {
   useFocusEffect(
     useCallback(() => {
       let cancelado = false;
-      listarLivros()
+      listarLocal()
+        .then(montarAcervo)
         .then((livros) => {
           if (!cancelado) {
             setGuardados(String(livros.length));
