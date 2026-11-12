@@ -21,12 +21,12 @@ Legenda do resultado: **aprovado** (o observado é o esperado), **falha** (não 
 | C13 | Rotação da tela | Lista em pé e deitada | Uma coluna em pé, duas deitada (tela larga) | corrigido | aparelho, 08/11/2026 (falha); aparelho, 11/11/2026 (aprovado) | `orientation` de `portrait` para `default` no `app.json` |
 | C14 | Cadastro de leitor | Aba Novo Leitor; nome e matrícula preenchidos; Cadastrar Leitor | `Leitor cadastrado com sucesso!`; o leitor aparece em "Leitores Cadastrados" | aprovado | aparelho, 11/11/2026 | - |
 | C15 | Leitor sem dados obrigatórios | Aba Novo Leitor; nome vazio; Cadastrar Leitor | Aviso `Preencha pelo menos o Nome e a Matrícula do leitor.`; nada é gravado | aprovado | aparelho, 11/11/2026 | - |
-| C16 | Empréstimo | Acervo; Emprestar em um livro com exemplares; escolher leitor | `Empréstimo realizado com sucesso!`; exemplares diminuem em 1 | não executado | - | - |
+| C16 | Empréstimo | Acervo; Emprestar em um livro com exemplares; escolher leitor | `Empréstimo realizado com sucesso!`; exemplares diminuem em 1 | aprovado | aparelho, 11/11/2026 | - |
 | C17 | Empréstimo sem exemplares | Acervo; Emprestar em um livro com 0 exemplares | Aviso `Sem exemplares disponíveis para empréstimo.` | não executado | - | - |
 | C18 | Devolução | Acervo; Devolver em um livro emprestado | `Livro devolvido com sucesso!`; exemplares aumentam em 1 | não executado | - | - |
 | C19 | Busca | Aba Pesquisar Livros; digitar parte do título ou do autor | Só os livros que contêm o termo aparecem | não executado | - | - |
-| C20 | Atualizar autor | Detalhe; Editar nome do autor; novo nome; Salvar | `Autor atualizado com sucesso!`; o novo nome aparece no detalhe e na lista | não executado | - | - |
+| C20 | Atualizar autor | Detalhe; Editar nome do autor; novo nome; Salvar | `Autor atualizado com sucesso!`; o novo nome aparece no detalhe e na lista | aprovado | aparelho, 11/11/2026 | - |
 | C21 | Autor vazio | Detalhe; Editar nome do autor; apagar o nome; Salvar | Aviso `Informe o nome do autor.`; o autor não muda | aprovado | aparelho, 11/11/2026 | - |
-| C22 | Excluir livro | Detalhe; Excluir livro; confirmar | `Livro excluído com sucesso!`; volta à lista sem o livro | não executado | - | - |
-| C23 | Excluir livro emprestado | Emprestar um livro; Detalhe; Excluir livro; confirmar | Aviso de empréstimo ativo; o livro continua na lista | não executado | - | - |
+| C22 | Excluir livro | Detalhe; Excluir livro; confirmar | `Livro excluído com sucesso!`; volta à lista sem o livro | aprovado | aparelho, 11/11/2026 | - |
+| C23 | Excluir livro emprestado | Emprestar um livro; Detalhe; Excluir livro; confirmar | Aviso de empréstimo ativo; o livro continua na lista | aprovado | aparelho, 11/11/2026 | - |
 | C24 | Excluir leitor com empréstimo | Leitor com empréstimo ativo; lixeira; Excluir | Aviso de empréstimos ativos; o leitor continua na lista | aprovado | aparelho, 11/11/2026 | - |
