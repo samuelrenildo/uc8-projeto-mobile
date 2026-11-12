@@ -31,17 +31,20 @@ export function TelaNovoLivro({ navigation }: TelaNovoLivroProps) {
 
     try {
       setCarregando(true);
-      await incluir({
+      const resultado = await incluir({
         titulo,
         autor,
         isbn: isbn.trim() ? isbn : undefined,
         exemplares: qtd,
       });
-      Alert.alert('Sucesso', 'Livro cadastrado com sucesso!');
+      if (resultado === 'pendente') {
+        Alert.alert('Aviso', 'Sem conexão: o livro foi guardado no aparelho e será enviado quando a rede voltar.');
+      } else {
+        Alert.alert('Sucesso', 'Livro cadastrado com sucesso!');
+      }
       navigation.goBack();
     } catch (erro: unknown) {
-      registrarErro('cadastro', erro);
-      const mensagem = erro instanceof Error ? erro.message : 'Erro ao cadastrar livro.';
+      const { mensagem } = registrarErro('cadastro', erro);
       Alert.alert('Erro', mensagem);
     } finally {
       setCarregando(false);
