@@ -51,13 +51,6 @@ export async function inicializarTabelasExtras(): Promise<void> {
   }
 
   
-  const leitorPadrao = await db.getFirstAsync<{ id: number }>('SELECT id FROM leitores WHERE id = 1;');
-  if (!leitorPadrao) {
-    await db.runAsync(
-      'INSERT OR IGNORE INTO leitores (id, nome, matricula, telefone, email) VALUES (1, ?, ?, ?, ?);',
-      ['Leitor Padrão', '000000', '(00) 00000-0000', 'padrao@biblioteca.com']
-    );
-  }
 }
 
 
@@ -196,5 +189,8 @@ export async function excluirLeitor(idLeitor: number): Promise<void> {
     throw new Error('Não é possível excluir este leitor pois ele possui empréstimos ativos pendentes de devolução.');
   }
 
-  await db.runAsync('DELETE FROM leitores WHERE id = ?;', [idLeitor]);
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('UPDATE emprestimos SET id_leitor = NULL WHERE id_leitor = ?;', [idLeitor]);
+    await db.runAsync('DELETE FROM leitores WHERE id = ?;', [idLeitor]);
+  });
 }
