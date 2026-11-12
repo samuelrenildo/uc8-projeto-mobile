@@ -6,6 +6,7 @@ import { useAcervo } from '../contexto/AcervoContexto';
 import type { Livro } from '../contexto/AcervoContexto';
 import type { RotasDaPilha } from '../navegacao/tipos';
 import { registrarErro } from '../erros/erros';
+import { listarLeitores } from '../data/bibliotecaService';
 
 type TelaAcervoProps = NativeStackScreenProps<RotasDaPilha, 'Acervo'>;
 
@@ -29,10 +30,10 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
     );
   }
 
-  const handleEmprestar = async (idLivro: number): Promise<void> => {
+  const confirmarEmprestimo = async (idLivro: number, idLeitor: number): Promise<void> => {
     try {
       setProcessandoId(idLivro);
-      await emprestarLivro(idLivro, 1);
+      await emprestarLivro(idLivro, idLeitor);
       Alert.alert('Sucesso', 'Empréstimo realizado com sucesso!');
     } catch (erro: unknown) {
       registrarErro('emprestimo', erro);
@@ -40,6 +41,26 @@ export function TelaAcervo({ navigation }: TelaAcervoProps) {
       Alert.alert('Aviso', mensagem);
     } finally {
       setProcessandoId(null);
+    }
+  };
+
+  const handleEmprestar = async (idLivro: number): Promise<void> => {
+    try {
+      const leitores = await listarLeitores();
+      if (leitores.length === 0) {
+        Alert.alert('Aviso', 'Cadastre um leitor antes de fazer empréstimos.');
+        return;
+      }
+      Alert.alert('Emprestar', 'Escolha o leitor:', [
+        ...leitores.map((leitor) => ({
+          text: leitor.nome,
+          onPress: () => confirmarEmprestimo(idLivro, leitor.id),
+        })),
+        { text: 'Cancelar', style: 'cancel' },
+      ]);
+    } catch (erro: unknown) {
+      registrarErro('emprestimo', erro);
+      Alert.alert('Aviso', 'Não foi possível carregar os leitores.');
     }
   };
 
