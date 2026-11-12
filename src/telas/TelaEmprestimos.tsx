@@ -58,7 +58,7 @@ export function TelaEmprestimos() {
           <View style={estilos.cartao}>
             <View style={estilos.info}>
               <Text style={estilos.tituloLivro}>{item.titulo}</Text>
-              <Text style={estilos.autorLivro}>Autor: {item.autor || item.nome_autor || 'Desconhecido'}</Text>
+              <Text style={estilos.autorLivro}>Autor: {item.autor || 'Desconhecido'}</Text>
               <Text style={estilos.exemplares}>
                 Disponíveis: <Text style={estilos.destaque}>{item.exemplares}</Text>
               </Text>
