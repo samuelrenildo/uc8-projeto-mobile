@@ -23,7 +23,7 @@ export async function inicializarBanco(): Promise<void> {
   const db = await abrirBancoDados();
 
   await db.execAsync(`
-    PRAGMA foreign_keys = ON;
+    PRAGMA foreign_keys = OFF;
 
     create table if not exists leitores (
       id integer primary key autoincrement,
